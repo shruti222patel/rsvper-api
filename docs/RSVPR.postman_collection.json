@@ -1,0 +1,156 @@
+{
+	"info": {
+		"_postman_id": "d96e90f2-0a7c-c7fd-4c6a-5de48d38eeec",
+		"name": "RSVPR",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Invite Intent",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json; charset=utf-8"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer ya29.c.ElqFBiHSw4GJ-REtYIDyIoMEuYDIYAuhIGCLbQ5e-gCmUkStG-tT10nj2C8T4RhQ-zOMJlTYBM7B7Za-AC46glthU55ZuTHa_BYBkNbe_c1i7VvW2p8w-Zw6LMg"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"queryInput\":{\"text\":{\"text\":\"Hey\",\"languageCode\":\"en\"}},\"queryParams\":{\"timeZone\":\"America/New_York\"}}"
+				},
+				"url": {
+					"raw": "https://dialogflow.googleapis.com/v2beta1/projects/rsvper-42ec0/agent/sessions/e22972e8-1cc2-1556-3df6-22d6316a815f:detectIntent",
+					"protocol": "https",
+					"host": [
+						"dialogflow",
+						"googleapis",
+						"com"
+					],
+					"path": [
+						"v2beta1",
+						"projects",
+						"rsvper-42ec0",
+						"agent",
+						"sessions",
+						"e22972e8-1cc2-1556-3df6-22d6316a815f:detectIntent"
+					]
+				},
+				"description": "Generated from a curl request: \ncurl -H \\\"Content-Type: application/json; charset=utf-8\\\"  -H \\\"Authorization: Bearer ya29.c.ElqFBiHSw4GJ-REtYIDyIoMEuYDIYAuhIGCLbQ5e-gCmUkStG-tT10nj2C8T4RhQ-zOMJlTYBM7B7Za-AC46glthU55ZuTHa_BYBkNbe_c1i7VvW2p8w-Zw6LMg\\\"  -d \\\"{\\\\\"queryInput\\\\\":{\\\\\"text\\\\\":{\\\\\"text\\\\\":\\\\\"Hey\\\\\",\\\\\"languageCode\\\\\":\\\\\"en\\\\\"}},\\\\\"queryParams\\\\\":{\\\\\"timeZone\\\\\":\\\\\"America/New_York\\\\\"}}\\\" \\\"https://dialogflow.googleapis.com/v2beta1/projects/rsvper-42ec0/agent/sessions/e22972e8-1cc2-1556-3df6-22d6316a815f:detectIntent\\\""
+			},
+			"response": []
+		},
+		{
+			"name": "I'd like to RSVP",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json; charset=utf-8"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer ya29.c.ElqFBiHSw4GJ-REtYIDyIoMEuYDIYAuhIGCLbQ5e-gCmUkStG-tT10nj2C8T4RhQ-zOMJlTYBM7B7Za-AC46glthU55ZuTHa_BYBkNbe_c1i7VvW2p8w-Zw6LMg"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"queryInput\":{\"text\":{\"text\":\"I'd like to rsvp\",\"languageCode\":\"en\"}},\"queryParams\":{\"timeZone\":\"America/New_York\"}}"
+				},
+				"url": {
+					"raw": "https://dialogflow.googleapis.com/v2beta1/projects/rsvper-42ec0/agent/sessions/e22972e8-1cc2-1556-3df6-22d6316a815f:detectIntent",
+					"protocol": "https",
+					"host": [
+						"dialogflow",
+						"googleapis",
+						"com"
+					],
+					"path": [
+						"v2beta1",
+						"projects",
+						"rsvper-42ec0",
+						"agent",
+						"sessions",
+						"e22972e8-1cc2-1556-3df6-22d6316a815f:detectIntent"
+					]
+				},
+				"description": "Generated from a curl request: \ncurl -H \\\"Content-Type: application/json; charset=utf-8\\\"  -H \\\"Authorization: Bearer ya29.c.ElqFBiHSw4GJ-REtYIDyIoMEuYDIYAuhIGCLbQ5e-gCmUkStG-tT10nj2C8T4RhQ-zOMJlTYBM7B7Za-AC46glthU55ZuTHa_BYBkNbe_c1i7VvW2p8w-Zw6LMg\\\"  -d \\\"{\\\\\"queryInput\\\\\":{\\\\\"text\\\\\":{\\\\\"text\\\\\":\\\\\"I'd like to rsvp\\\\\",\\\\\"languageCode\\\\\":\\\\\"en\\\\\"}},\\\\\"queryParams\\\\\":{\\\\\"timeZone\\\\\":\\\\\"America/New_York\\\\\"}}\\\" \\\"https://dialogflow.googleapis.com/v2beta1/projects/rsvper-42ec0/agent/sessions/e22972e8-1cc2-1556-3df6-22d6316a815f:detectIntent\\\""
+			},
+			"response": []
+		},
+		{
+			"name": "How many attending",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json; charset=utf-8"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer ya29.c.ElqFBiHSw4GJ-REtYIDyIoMEuYDIYAuhIGCLbQ5e-gCmUkStG-tT10nj2C8T4RhQ-zOMJlTYBM7B7Za-AC46glthU55ZuTHa_BYBkNbe_c1i7VvW2p8w-Zw6LMg"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"queryInput\":{\"text\":{\"text\":\"5\",\"languageCode\":\"en\"}},\"queryParams\":{\"timeZone\":\"America/New_York\"}}"
+				},
+				"url": {
+					"raw": "https://dialogflow.googleapis.com/v2beta1/projects/rsvper-42ec0/agent/sessions/e22972e8-1cc2-1556-3df6-22d6316a815f:detectIntent",
+					"protocol": "https",
+					"host": [
+						"dialogflow",
+						"googleapis",
+						"com"
+					],
+					"path": [
+						"v2beta1",
+						"projects",
+						"rsvper-42ec0",
+						"agent",
+						"sessions",
+						"e22972e8-1cc2-1556-3df6-22d6316a815f:detectIntent"
+					]
+				},
+				"description": "Generated from a curl request: \ncurl -H \\\"Content-Type: application/json; charset=utf-8\\\"  -H \\\"Authorization: Bearer ya29.c.ElqFBiHSw4GJ-REtYIDyIoMEuYDIYAuhIGCLbQ5e-gCmUkStG-tT10nj2C8T4RhQ-zOMJlTYBM7B7Za-AC46glthU55ZuTHa_BYBkNbe_c1i7VvW2p8w-Zw6LMg\\\"  -d \\\"{\\\\\"queryInput\\\\\":{\\\\\"text\\\\\":{\\\\\"text\\\\\":\\\\\"5\\\\\",\\\\\"languageCode\\\\\":\\\\\"en\\\\\"}},\\\\\"queryParams\\\\\":{\\\\\"timeZone\\\\\":\\\\\"America/New_York\\\\\"}}\\\" \\\"https://dialogflow.googleapis.com/v2beta1/projects/rsvper-42ec0/agent/sessions/e22972e8-1cc2-1556-3df6-22d6316a815f:detectIntent\\\""
+			},
+			"response": []
+		},
+		{
+			"name": "Fulfilment Request for RSVP numbers",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n   \"responseId\":\"96b07e3f-2186-491d-863a-caddfc7fd2bd\",\n   \"queryResult\":{\n      \"queryText\":\"8\",\n      \"action\":\"input.rsvp\",\n      \"parameters\":{\n         \"weddingRsvpdInvitees\":8,\n         \"vidhiRsvpdInvitees\":6,\n         \"garbaRsvpdInvitees\":7\n      },\n      \"allRequiredParamsPresent\":true,\n      \"fulfillmentText\":\"Great -- Ive got your rsvps down. See you at the wedding!! <3\",\n      \"fulfillmentMessages\":[\n         {\n            \"text\":{\n               \"text\":[\n                  \"Great -- Ive got your rsvps down. See you at the wedding!! <3\"\n               ]\n            }\n         }\n      ],\n      \"outputContexts\":[\n         {\n            \"name\":\"projects/rsvper-42ec0/agent/sessions/e22972e8-1cc2-1556-3df6-22d6316a815f/contexts/rsvp_context\",\n            \"lifespanCount\":25,\n            \"parameters\":{\n               \"vidhiRsvpdInvitees\":6,\n               \"weddingRsvpdInvitees\":8,\n               \"vidhiRsvpdInvitees.original\":\"6\",\n               \"weddingRsvpdInvitees.original\":\"8\",\n               \"garbaRsvpdInvitees.original\":\"7\",\n               \"garbaRsvpdInvitees\":7\n            }\n         }\n      ],\n      \"intent\":{\n         \"name\":\"projects/rsvper-42ec0/agent/intents/a919510e-d7b9-43e9-82d6-8bdf57ddcc85\",\n         \"displayName\":\"rsvper.rsvp\",\n         \"endInteraction\":true\n      },\n      \"intentDetectionConfidence\":1,\n      \"diagnosticInfo\":{\n         \"end_conversation\":true\n      },\n      \"languageCode\":\"en\"\n   },\n   \"originalDetectIntentRequest\":{\n      \"payload\":{\n\n      }\n   },\n   \"session\":\"projects/rsvper-42ec0/agent/sessions/e22972e8-1cc2-1556-3df6-22d6316a815f\"\n}"
+				},
+				"url": {
+					"raw": "https://rsvper.serveo.net/hello",
+					"protocol": "https",
+					"host": [
+						"rsvper",
+						"serveo",
+						"net"
+					],
+					"path": [
+						"hello"
+					]
+				},
+				"description": "Generated from a curl request: \ncurl -X POST -H 'Content-Type: application/json' -d '{\\\"responseId\\\":\\\"96b07e3f-2186-491d-863a-caddfc7fd2bd\\\",\\\"queryResult\\\":{\\\"queryText\\\":\\\"8\\\",\\\"action\\\":\\\"input.rsvp\\\",\\\"parameters\\\":{\\\"weddingRsvpdInvitees\\\":8,\\\"vidhiRsvpdInvitees\\\":6,\\\"garbaRsvpdInvitees\\\":7},\\\"allRequiredParamsPresent\\\":true,\\\"fulfillmentText\\\":\\\"Great -- I''ve got your rsvps down. See you at the wedding!! <3\\\",\\\"fulfillmentMessages\\\":[{\\\"text\\\":{\\\"text\\\":[\\\"Great -- I''ve got your rsvps down. See you at the wedding!! <3\\\"]}}],\\\"outputContexts\\\":[{\\\"name\\\":\\\"projects/rsvper-42ec0/agent/sessions/e22972e8-1cc2-1556-3df6-22d6316a815f/contexts/rsvp_context\\\",\\\"lifespanCount\\\":25,\\\"parameters\\\":{\\\"vidhiRsvpdInvitees\\\":6,\\\"weddingRsvpdInvitees\\\":8,\\\"vidhiRsvpdInvitees.original\\\":\\\"6\\\",\\\"weddingRsvpdInvitees.original\\\":\\\"8\\\",\\\"garbaRsvpdInvitees.original\\\":\\\"7\\\",\\\"garbaRsvpdInvitees\\\":7}}],\\\"intent\\\":{\\\"name\\\":\\\"projects/rsvper-42ec0/agent/intents/a919510e-d7b9-43e9-82d6-8bdf57ddcc85\\\",\\\"displayName\\\":\\\"rsvpr.rsvp\\\",\\\"endInteraction\\\":true},\\\"intentDetectionConfidence\\\":1,\\\"diagnosticInfo\\\":{\\\"end_conversation\\\":true},\\\"languageCode\\\":\\\"en\\\"},\\\"originalDetectIntentRequest\\\":{\\\"payload\\\":{}},\\\"session\\\":\\\"projects/rsvper-42ec0/agent/sessions/e22972e8-1cc2-1556-3df6-22d6316a815f\\\"}' 'https://e8a5d75f.ngrok.io'"
+			},
+			"response": []
+		}
+	]
+}
