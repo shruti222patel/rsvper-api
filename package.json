@@ -1,0 +1,17 @@
+{
+  "name": "rvesper",
+  "version": "1.0.0",
+  "description": "Rsvper facilitates makeing and collecting RSVPs via text messages and (in the future) phone calls.",
+  "main": "",
+  "directories": {},
+  "dependencies": {},
+  "devDependencies": {
+    "serverless-sam": "^0.2.0",
+    "serverless-secrets-plugin": "^0.1.0"
+  },
+  "scripts": {
+    "test": "go test ./..."
+  },
+  "author": "",
+  "license": "ISC"
+}

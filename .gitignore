@@ -1,0 +1,16 @@
+# Serverless directories
+.serverless
+
+# golang output binary directory
+bin
+
+# golang vendor (dependencies) directory
+vendor
+
+# creds
+secrets.dev.yml
+secrets.staging.yml
+secrets.qa.yml
+secrets.prod.yml
+
+hello/credentials.json
