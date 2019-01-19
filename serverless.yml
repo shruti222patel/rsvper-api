@@ -47,6 +47,9 @@ provider:
 #            - "Ref" : "ServerlessDeploymentBucket"
 #            - "/*"
 
+custom:
+  secrets: ${file(secrets.${opt:stage, self:provider.stage}.yml)}
+
 # you can define service wide environment variables here
 #  environment:
 #    variable1: value1
@@ -64,6 +67,9 @@ functions:
       - http:
           path: hello
           method: post
+    environment:
+      GOOGLE_API_CREDS: ${self:custom.secrets.google_api_creds}
+
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events

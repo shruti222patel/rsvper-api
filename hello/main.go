@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -244,14 +244,11 @@ func getGoogleSheetsData(sheetName string, colRange string) ([][]interface{}, er
 }
 
 func getGoogleSheetsClient() *sheets.Service {
-	b, err := ioutil.ReadFile("credentials.json")
-	if err != nil {
-		log.Fatalf("Unable to read client secret file: %v", err)
-	}
+	// log.Println("google api creds", os.Getenv("GOOGLE_API_CREDS"))
 
 	// If modifying these scopes, delete your previously saved token.json.
 	// Full list of scopes: https://developers.google.com/sheets/api/guides/authorizing
-	config, err := google.JWTConfigFromJSON(b, "https://www.googleapis.com/auth/spreadsheets") // Allows read/write access to the user's sheets and their properties.
+	config, err := google.JWTConfigFromJSON([]byte(os.Getenv("GOOGLE_API_CREDS")), "https://www.googleapis.com/auth/spreadsheets") // Allows read/write access to the user's sheets and their properties.
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}

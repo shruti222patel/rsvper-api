@@ -9,3 +9,8 @@ clean:
 .PHONY: deploy
 deploy: clean build
 	sls deploy --verbose
+
+.PHONY: test
+test:
+	export GOOGLE_API_CREDS=<insert google api creds>
+	go test ./...

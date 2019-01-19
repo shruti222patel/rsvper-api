@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -79,6 +80,13 @@ func BenchmarkHandler(b *testing.B) {
 	}
 
 	b.Logf("Response: +%v", response)
+}
+
+func TestEnvVariableExists(t *testing.T) {
+	googleAPICreds := os.Getenv("GOOGLE_API_CREDS")
+	if googleAPICreds == "" {
+		t.Error("Couldn't find the GOOGLE_API_CREDS environment variable")
+	}
 }
 
 // Can't test because starting up the program runs main which runs the Handler and
