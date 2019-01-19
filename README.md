@@ -40,43 +40,43 @@ Rsvper facilitates makeing and collecting RSVPs via text messages and (in the fu
 
 ## Database Structure
 ### INVITED_FAMILY
-## Origin 
+#### Origin 
 - (informal) where the family is from
 - string
 - col A
-## Name 
+#### Name 
 - (informal) name used by Rajeshri
 - string
 - col B
-## Invite Name 
+#### Invite Name 
 - name displayed on invite
 - string
 - col C
-## Invite Code 
+#### Invite Code 
 - unique code to distinguish invited families
 - number
 - col D
-## Vidhi-Invite 
+#### Vidhi-Invite 
 - number of people invited to the vidhi on the invitation card (`ALL` means unlimited, `NULL` means no value yet)
 - string/number
 - col E
-## Vidhi-RSVP'd 
+#### Vidhi-RSVP'd 
 - latest number rsvp'd by the invited family for the vidhi (`NULL` means no value yet)
 - strin/number
 - col F
-## Garba-Invite 
+#### Garba-Invite 
 - number of people invited to the garba on the invitation card (`ALL` means unlimited, `NULL` means no value yet)
 - string/number
 - col G
-## Garba-RSVP'd 
+#### Garba-RSVP'd 
 - latest number rsvp'd by the invited family for the garba (`NULL` means no value yet)
 - string/number
 - col H
-## Wedding-Invite 
+#### Wedding-Invite 
 - number of people invited to the wedding on the invitation card (`ALL` means unlimited, `NULL` means no value yet)
 - string/number
 - col I
-## Wedding-RSVP'd 
+#### Wedding-RSVP'd 
 - latest number rsvp'd by the invited family for the wedding (`NULL` means no value yet)
 - string/number
 - col J
@@ -84,23 +84,23 @@ Rsvper facilitates makeing and collecting RSVPs via text messages and (in the fu
 ** Note needed to add `NULL` to number columns because the golang google sheets lib automatically omits empty values **
 
 ### UPDATE_EVENT
-## Invite Code 
+#### Invite Code 
 - used to connect the event to the invited family
 - number
 - col A
-## Phone Number 
+#### Phone Number 
 - phone number used to make the rsvp update
 - string
 - col B
-## Event
+#### Event
 - vidhi, garba, or wedding
 - string (enum)
 - col C
-## Number Attending 
+#### Number Attending 
 - number of invitees atting the event
 - number
 - col D
-## Timestamp 
+#### Timestamp 
 - time this rsvp update was made
 - number
 - col E
