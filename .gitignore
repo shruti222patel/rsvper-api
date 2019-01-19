@@ -15,5 +15,8 @@ secrets.prod.yml
 
 hello/credentials.json
 
+Makefile
+
 # node
 node_modules/
+
