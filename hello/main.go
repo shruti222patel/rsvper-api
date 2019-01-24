@@ -41,6 +41,24 @@ const (
 	SPREADSHEET_ID       = "1FJPePAwh8Xy9revrg8-ANn7GK2Xwd0Xe_6DdLqDujbc"
 )
 
+type InvitedFamily struct {
+	Origin         string
+	Name           string
+	InviteName     string
+	InviteCode     int
+	VidhiInvited   int
+	VidhiRsvpd     int
+	GarbaInvited   int
+	GarbaRsvpd     int
+	WeddingInvited int
+	WeddingRsvpd   int
+}
+
+type DialogflowResponse struct {
+	Speech string
+	Text   string
+}
+
 var Vidhi = Event{Name: "VIDHI", InvitedCol: "E", RsvpdCol: "F"}
 var Garba = Event{Name: "GARBA", InvitedCol: "G", RsvpdCol: "H"}
 var Wedding = Event{Name: "WEDDING", InvitedCol: "I", RsvpdCol: "J"}
@@ -59,16 +77,57 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		log.Fatal(err)
 	}
 	// log.Printf("Parsed body: +%v", wr.QueryResult.OutputContexts[0].Parameters)
-
-	switch wr.QueryResult.Intent.DisplayName {
+	intent := wr.QueryResult.Intent.DisplayName
+	var message string
+	switch intent {
 	case "rsvper.rsvp":
 		log.Println("Start extracting & saving rsvps")
 		rsvps := extractRsvps(wr.QueryResult.OutputContexts[0].Parameters.Fields)
 		saveRsvp(241, "8045033244", wr.Session, rsvps)
 		break
+	case "rsvper.welcome - invitecode":
+		fields := wr.QueryResult.Parameters.Fields
+		inviteCode := int(fields["invite_code"].GetNumberValue())
+		log.Printf("\nIntent: %s - Starting fulfillment for invite code: %d", intent, inviteCode)
+		message = InviteCodeFulfillment(inviteCode)
+		break
+	default:
+		log.Println("No slot-filling or fulfillment functions matched for inviteCode", wr.QueryResult.Intent.DisplayName)
 	}
 
-	return events.APIGatewayProxyResponse{Body: request.Body, StatusCode: 200}, nil
+	responseBody := DialogflowResponse{
+		Speech: message,
+		Text:   message,
+	}
+
+	var buf bytes.Buffer
+
+	body, err := json.Marshal(responseBody)
+	if err != nil {
+		return events.APIGatewayProxyResponse{StatusCode: 400}, err
+	}
+	json.HTMLEscape(&buf, body)
+
+	return events.APIGatewayProxyResponse{Body: buf.String(), StatusCode: 200}, nil
+}
+
+func InviteCodeFulfillment(inviteCode int) string {
+	// inviteNumber, err := strconv.Atoi(inviteCode)
+	// if err != nil {
+	// 	log.Fatalf("Unable to convert invite code(%s) to a number: %v", inviteCode, err)
+	// }
+	invitedFamily := findInvitedFamily(inviteCode)
+	message := fmt.Sprintf("You must be %s.\nYou're invited to", invitedFamily.InviteName)
+	if invitedFamily.VidhiInvited > 0 {
+		message += fmt.Sprintf("\nVidhi: %d", invitedFamily.VidhiInvited)
+	}
+	if invitedFamily.GarbaInvited > 0 {
+		message += fmt.Sprintf("\nGarba: %d", invitedFamily.GarbaInvited)
+	}
+	if invitedFamily.WeddingInvited > 0 {
+		message += fmt.Sprintf("\nWedding: %d", invitedFamily.WeddingInvited)
+	}
+	return message
 }
 
 func CaseInsensitiveContains(s, substr string) bool {
@@ -100,29 +159,47 @@ func extractRsvps(values map[string]*structpb.Value) map[Event]int {
 	return rsvps
 }
 
-func findInvitedFamily(inviteCode string) []interface{} {
-	inviteNumber, err := strconv.Atoi(inviteCode)
-	if err != nil {
-		log.Fatalf("Unable to convert invite code(%s) to a number: %v", inviteCode, err)
-	}
-
+func findInvitedFamily(inviteNumber int) InvitedFamily {
 	// Assume rows are ordered by invite code
-	wrappedInvitedFamily, err := getInvitedFamilyRow(inviteNumber + 1) // Add one for the header
+	doubleWrappedInvitedFamily, err := getInvitedFamilyRow(inviteNumber + 1) // Add one for the header
 	if err != nil {
 		log.Fatalf("Unable to retrieve data from sheet: %v", err)
 	}
-	invitedFamily := wrappedInvitedFamily[0]
+	wrappedInvitedFamily := doubleWrappedInvitedFamily[0]
 
 	// if they are not ordered by invite code
-	if invitedFamily == nil || len(invitedFamily) == 0 {
-		wrappedInvitedFamily, err := SearchForInvitedFamily(inviteNumber)
+	if wrappedInvitedFamily == nil || len(wrappedInvitedFamily) == 0 {
+		wrappedInvitedFamily, err = SearchForInvitedFamily(inviteNumber)
 		if err != nil {
 			log.Fatalf("Unable to retrieve data from sheet: %v", err)
 		}
-		invitedFamily = wrappedInvitedFamily
 	}
 
-	return invitedFamily
+	if wrappedInvitedFamily == nil {
+		return InvitedFamily{}
+	}
+
+	// Todo: break into separate function
+	inviteCodeFromInvitedFamily, _ := strconv.Atoi(fmt.Sprint(wrappedInvitedFamily[3]))
+	vidhiInvited, _ := strconv.Atoi(fmt.Sprint(wrappedInvitedFamily[4]))
+	vidhiRsvpd, _ := strconv.Atoi(fmt.Sprint(wrappedInvitedFamily[5]))
+	garbaInvited, _ := strconv.Atoi(fmt.Sprint(wrappedInvitedFamily[6]))
+	garbaRsvpd, _ := strconv.Atoi(fmt.Sprint(wrappedInvitedFamily[7]))
+	weddingInvited, _ := strconv.Atoi(fmt.Sprint(wrappedInvitedFamily[8]))
+	weddingRsvpd, _ := strconv.Atoi(fmt.Sprint(wrappedInvitedFamily[9]))
+
+	return InvitedFamily{
+		Origin:         fmt.Sprint(wrappedInvitedFamily[0]),
+		Name:           fmt.Sprint(wrappedInvitedFamily[1]),
+		InviteName:     fmt.Sprint(wrappedInvitedFamily[2]),
+		InviteCode:     inviteCodeFromInvitedFamily,
+		VidhiInvited:   vidhiInvited,
+		VidhiRsvpd:     vidhiRsvpd,
+		GarbaInvited:   garbaInvited,
+		GarbaRsvpd:     garbaRsvpd,
+		WeddingInvited: weddingInvited,
+		WeddingRsvpd:   weddingRsvpd,
+	}
 }
 
 func SearchForInvitedFamily(inviteNumber int) ([]interface{}, error) {

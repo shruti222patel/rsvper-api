@@ -7,7 +7,68 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 )
 
-var mockRequest = events.APIGatewayProxyRequest{
+var mockInviteCodeFulfillmentRequest = events.APIGatewayProxyRequest{
+	Body: `
+	{
+		"responseId": "69ebe95e-3b44-4954-a2a2-20200418f61a",
+		"queryResult": {
+		  "queryText": "1",
+		  "action": "rsvperwelcome.rsvperwelcome-custom",
+		  "parameters": {
+			"invite_code": 1
+		  },
+		  "allRequiredParamsPresent": true,
+		  "fulfillmentText": "Thanks! Got your invite code -- 1",
+		  "fulfillmentMessages": [
+			{
+			  "text": {
+				"text": [
+				  "Thanks! Got your invite code -- 1"
+				]
+			  }
+			}
+		  ],
+		  "outputContexts": [
+			{
+			  "name": "projects/rsvper-42ec0/agent/sessions/5c7d44c9-0527-98b1-7402-622458f80cb8/contexts/rsvprinvite-followup",
+			  "lifespanCount": 1,
+			  "parameters": {
+				"invite_code.original": "1",
+				"invite_code": 1
+			  }
+			},
+			{
+			  "name": "projects/rsvper-42ec0/agent/sessions/5c7d44c9-0527-98b1-7402-622458f80cb8/contexts/rsvperwelcome-followup",
+			  "lifespanCount": 1,
+			  "parameters": {
+				"invite_code.original": "1",
+				"invite_code": 1
+			  }
+			},
+			{
+			  "name": "projects/rsvper-42ec0/agent/sessions/5c7d44c9-0527-98b1-7402-622458f80cb8/contexts/rsvperwelcome-invitecode-followup",
+			  "lifespanCount": 10,
+			  "parameters": {
+				"invite_code.original": "1",
+				"invite_code": 1
+			  }
+			}
+		  ],
+		  "intent": {
+			"name": "projects/rsvper-42ec0/agent/intents/7a559a2c-5f89-406f-8e3e-d8f4073fedaa",
+			"displayName": "rsvper.welcome - invitecode"
+		  },
+		  "intentDetectionConfidence": 1,
+		  "languageCode": "en"
+		},
+		"originalDetectIntentRequest": {
+		  "payload": {}
+		},
+		"session": "projects/rsvper-42ec0/agent/sessions/5c7d44c9-0527-98b1-7402-622458f80cb8"
+	  }`,
+}
+
+var mockRsvpFulfillmentRequest = events.APIGatewayProxyRequest{
 	Body: `
 	{
 		"responseId":"96b07e3f-2186-491d-863a-caddfc7fd2bd",
@@ -64,8 +125,85 @@ var mockRequest = events.APIGatewayProxyRequest{
 	 }`,
 }
 
-func TestHandler(t *testing.T) {
-	response, err := Handler(mockRequest)
+var mockRsvpSlotFillingRequest = events.APIGatewayProxyRequest{
+	Body: `
+	"responseId": "aec29e25-eb7a-42be-91d8-ea99a7b2221d",
+	"queryResult": {
+	  "queryText": "rsvp",
+	  "action": "rsvperwelcome.rsvperwelcome-custom.rsvperwelcome-custom-custom",
+	  "parameters": {
+		"vidhi_rsvp": "",
+		"garba_rsvp": "",
+		"wedding_rsvp": ""
+	  },
+	  "allRequiredParamsPresent": true,
+	  "fulfillmentMessages": [
+		{
+		  "text": {
+			"text": [
+			  ""
+			]
+		  }
+		}
+	  ],
+	  "outputContexts": [
+		{
+		  "name": "projects/rsvper-42ec0/agent/sessions/5c7d44c9-0527-98b1-7402-622458f80cb8/contexts/rsvprinvite-followup",
+		  "parameters": {
+			"wedding_rsvp": "",
+			"wedding_rsvp.original": "",
+			"invite_code.original": "1",
+			"garba_rsvp": "",
+			"invite_code": 1,
+			"garba_rsvp.original": "",
+			"vidhi_rsvp": "",
+			"vidhi_rsvp.original": ""
+		  }
+		},
+		{
+		  "name": "projects/rsvper-42ec0/agent/sessions/5c7d44c9-0527-98b1-7402-622458f80cb8/contexts/rsvperwelcome-followup",
+		  "parameters": {
+			"wedding_rsvp": "",
+			"wedding_rsvp.original": "",
+			"invite_code.original": "1",
+			"garba_rsvp": "",
+			"invite_code": 1,
+			"garba_rsvp.original": "",
+			"vidhi_rsvp": "",
+			"vidhi_rsvp.original": ""
+		  }
+		},
+		{
+		  "name": "projects/rsvper-42ec0/agent/sessions/5c7d44c9-0527-98b1-7402-622458f80cb8/contexts/rsvperwelcome-invitecode-followup",
+		  "lifespanCount": 9,
+		  "parameters": {
+			"wedding_rsvp": "",
+			"wedding_rsvp.original": "",
+			"invite_code.original": "1",
+			"garba_rsvp": "",
+			"invite_code": 1,
+			"garba_rsvp.original": "",
+			"vidhi_rsvp": "",
+			"vidhi_rsvp.original": ""
+		  }
+		}
+	  ],
+	  "intent": {
+		"name": "projects/rsvper-42ec0/agent/intents/e9c67536-369b-46cd-9acb-bab986937295",
+		"displayName": "rsvper.welcome - invitecode - rsvp"
+	  },
+	  "intentDetectionConfidence": 1,
+	  "languageCode": "en"
+	},
+	"originalDetectIntentRequest": {
+	  "payload": {}
+	},
+	"session": "projects/rsvper-42ec0/agent/sessions/5c7d44c9-0527-98b1-7402-622458f80cb8"
+  }`,
+}
+
+func TestInviteCodeFulfillmentHandler(t *testing.T) {
+	response, err := Handler(mockInviteCodeFulfillmentRequest)
 	if err != nil {
 		t.Errorf("Error: +%v", err)
 	}
@@ -73,8 +211,8 @@ func TestHandler(t *testing.T) {
 	t.Logf("Response: +%v", response)
 }
 
-func BenchmarkHandler(b *testing.B) {
-	response, err := Handler(mockRequest)
+func BenchmarkInviteCodeFulfillmentHandler(b *testing.B) {
+	response, err := Handler(mockInviteCodeFulfillmentRequest)
 	if err != nil {
 		b.Errorf("Error: +%v", err)
 	}
@@ -82,6 +220,40 @@ func BenchmarkHandler(b *testing.B) {
 	b.Logf("Response: +%v", response)
 }
 
+func TestRsvpFulfillmentHandler(t *testing.T) {
+	response, err := Handler(mockRsvpFulfillmentRequest)
+	if err != nil {
+		t.Errorf("Error: +%v", err)
+	}
+
+	t.Logf("Response: +%v", response)
+}
+
+func BenchmarkRsvpFulfillmentHandler(b *testing.B) {
+	response, err := Handler(mockRsvpFulfillmentRequest)
+	if err != nil {
+		b.Errorf("Error: +%v", err)
+	}
+
+	b.Logf("Response: +%v", response)
+}
+func TestRsvpSlotFillingHandler(t *testing.T) {
+	response, err := Handler(mockRsvpSlotFillingRequest)
+	if err != nil {
+		t.Errorf("Error: +%v", err)
+	}
+
+	t.Logf("Response: +%v", response)
+}
+
+func BenchmarkRsvpSlotFillingHandler(b *testing.B) {
+	response, err := Handler(mockRsvpSlotFillingRequest)
+	if err != nil {
+		b.Errorf("Error: +%v", err)
+	}
+
+	b.Logf("Response: +%v", response)
+}
 func TestEnvVariableExists(t *testing.T) {
 	googleAPICreds := os.Getenv("GOOGLE_API_CREDS")
 	if googleAPICreds == "" {
