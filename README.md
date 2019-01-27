@@ -24,6 +24,7 @@ Rsvper facilitates makeing and collecting RSVPs via text messages and (in the fu
     - Function Integration Test -> 
         - add google api creds to the `Makefile`
         - run `make test`
+        - replace `<insert google api creds>` with creds from another developer (*Correction* for now you will have to `export` those creds (gotten from a developer) into your env variables)
     - (Mock) Deployment -> 
         - `serverless deploy --nodeploy` to regernate the rsvper.zip that sam-local uses.
     - Local End-to-End Test -> 
@@ -31,7 +32,11 @@ Rsvper facilitates makeing and collecting RSVPs via text messages and (in the fu
         - run `ssh -R rsvper.serveo.net:80:localhost:3000 serveo.net`
         - you shouldn't have to update the webhook url as the subdomain used by serveo.net will always be the same, but if you do need to: Copy & paste the `https://<forwarding-url>/hello` (forwarding-url printed on the terminal) into the [dialogflow fulfillment webhook](https://console.dialogflow.com/api-client/#/agent/a637c45e-9770-4fcc-acc7-8821de730eaa/fulfillment) -- Remember to press the `Save` button at the bottom of the page
         - import and run `POST Fulfillment Request for RSVP...` from the postman collection in `docs/`
-
+### Prod Deployment
+- `serverless deploy` (make sure you have the correct default creds in your `~/.aws/credentials`)
+- to completely redeploy the entire stack and not just update the lambda function code:
+    - delete the cloud formation stack (you may have to delete the s3 bucket first)
+    - `serverless deploy`
 ### Additional Config
 - Encrypt creds: `serverless encrypt --stage dev --password <password>`
 - Decrypt creds: `serverless dncrypt --stage dev --password <password>`
@@ -48,6 +53,8 @@ Rsvper facilitates makeing and collecting RSVPs via text messages and (in the fu
 
 ## TODO
 - Dockerize app
+- Add end of conversation message (after they've rsvp'ed to all the events they've been invited to)
+- Allow users to skip specific rsvps
 
 ## Database Structure
 ### INVITED_FAMILY

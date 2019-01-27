@@ -2,9 +2,7 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -29,16 +27,19 @@ import (
 // https://serverless.com/framework/docs/providers/aws/events/apigateway/#lambda-proxy-integration
 type Response events.APIGatewayProxyResponse
 type Event struct {
-	Name       string
-	InvitedCol string
-	RsvpdCol   string
+	Name             string
+	InvitedCol       string
+	RsvpdCol         string
+	DialogflowAction string
 }
 
 const (
 	INVITED_FAMILY       = "INVITED_FAMILY"
 	UPDATE_EVENT         = "UPDATE_EVENT"
-	TOTAL_INVITED_FAMILY = 240
+	TOTAL_INVITED_FAMILY = 9999
 	SPREADSHEET_ID       = "1FJPePAwh8Xy9revrg8-ANn7GK2Xwd0Xe_6DdLqDujbc"
+	MAX_INVITEES         = 9999
+	NULL_INVITEES        = -1
 )
 
 type InvitedFamily struct {
@@ -54,14 +55,26 @@ type InvitedFamily struct {
 	WeddingRsvpd   int
 }
 
-type DialogflowResponse struct {
-	Speech string
-	Text   string
+func (invitedFamily *InvitedFamily) totalEventsInvitedTo() int {
+	var totalEvents int
+	switch{
+	case invitedFamily.VidhiInvited > 0:
+		totalEvents++
+	case invitedFamily.GarbaInvited > 0:
+		totalEvents++
+	case invitedFamily.WeddingInvited > 0:
+		totalEvents++
+	}
+	return totalEvents
 }
 
-var Vidhi = Event{Name: "VIDHI", InvitedCol: "E", RsvpdCol: "F"}
-var Garba = Event{Name: "GARBA", InvitedCol: "G", RsvpdCol: "H"}
-var Wedding = Event{Name: "WEDDING", InvitedCol: "I", RsvpdCol: "J"}
+var Vidhi = Event{Name: "VIDHI", InvitedCol: "E", RsvpdCol: "F", DialogflowAction: "actions_rsvp_vidhi"}
+var Garba = Event{Name: "GARBA", InvitedCol: "G", RsvpdCol: "H", DialogflowAction: "actions_rsvp_garba"}
+var Wedding = Event{Name: "WEDDING", InvitedCol: "I", RsvpdCol: "J", DialogflowAction: "actions_rsvp_wedding"}
+
+var sessionID string
+var responseID string
+var request string
 
 func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	fmt.Println("Received body: ", request.Body)
@@ -70,62 +83,223 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	wr := dialogflow.WebhookRequest{}
 	unmarshaller := &jsonpb.Unmarshaler{AllowUnknownFields: true}
 	if err = unmarshaller.Unmarshal(strings.NewReader(request.Body), &wr); err != nil {
-		// if err = jsonpb.UnmarshalString(request.Body, &wr); err != nil {
-		// logrus.WithError(err).Error("Couldn't Unmarshal request to jsonpb")
-		// c.Status(http.StatusBadRequest)
-		// return
 		log.Fatal(err)
 	}
+	responseID = wr.ResponseId
+	sessionID = wr.Session
+	// request = fmt.Sprintf("%+v", request.Body)
+	log.Printf("Processing responseId: %s and sessionId: %s", responseID, sessionID)
 	// log.Printf("Parsed body: +%v", wr.QueryResult.OutputContexts[0].Parameters)
 	intent := wr.QueryResult.Intent.DisplayName
 	var message string
+	var followupIntentName string
 	switch intent {
-	case "rsvper.rsvp":
-		log.Println("Start extracting & saving rsvps")
-		rsvps := extractRsvps(wr.QueryResult.OutputContexts[0].Parameters.Fields)
-		saveRsvp(241, "8045033244", wr.Session, rsvps)
-		break
+	case "rsvper.welcome":
+		followupIntentName = "rsvper.welcome-invitecode"
 	case "rsvper.welcome - invitecode":
+		// Given invite code return number of invitees
 		fields := wr.QueryResult.Parameters.Fields
 		inviteCode := int(fields["invite_code"].GetNumberValue())
 		log.Printf("\nIntent: %s - Starting fulfillment for invite code: %d", intent, inviteCode)
-		message = InviteCodeFulfillment(inviteCode)
-		break
+		message, _ = InviteCodeFulfillment(inviteCode)
+	case "rsvper.welcome - invitecode - yes":
+		// Given invite code return number of invitees
+		inviteCode := getInviteCodeFromContext(wr.QueryResult.OutputContexts)
+		log.Printf("\nIntent: %s - Starting fulfillment for invite code: %d", intent, inviteCode)
+		_, followupIntentName = InviteCodeFulfillment(inviteCode)	
+	case "rsvper.rsvp-wedding":
+		fallthrough
+	case "rsvper.welcome - invitecode - yes - wedding":
+		fallthrough
+	case "rsvper.welcome - invitecode - wedding":
+		// Return which event values have to be filled & save updates
+		event := Wedding
+		phoneNumber := getPhoneNumberFromContext(wr.QueryResult.OutputContexts)
+		inviteCode := getInviteCodeFromContext(wr.QueryResult.OutputContexts)
+		if inviteCode == -1 {
+			log.Fatalf("%s | %s | Couldn't find the invite code", sessionID, responseID)
+		}
+		log.Printf("\nIntent: %s - Starting fulfillment for invite code: %d", intent, inviteCode)
+		followupIntentName = saveRsvpCnt(event, wr.QueryResult.OutputContexts[0].Parameters.Fields, inviteCode, phoneNumber)
+	case "rsvper.welcome - invitecode - yes - garba":
+		fallthrough
+	case "rsvper.welcome - invitecode - garba":
+		// Return which event values have to be filled & save updates
+		event := Garba
+		phoneNumber := getPhoneNumberFromContext(wr.QueryResult.OutputContexts)
+		inviteCode := getInviteCodeFromContext(wr.QueryResult.OutputContexts)
+		if inviteCode == -1 {
+			log.Fatalf("%s | %s | Couldn't find the invite code", sessionID, responseID)
+		}
+		log.Printf("\nIntent: %s - Starting fulfillment for invite code: %d", intent, inviteCode)
+		followupIntentName = saveRsvpCnt(event, wr.QueryResult.OutputContexts[0].Parameters.Fields, inviteCode, phoneNumber)
+	case "rsvper.welcome - invitecode - yes - vidhi":
+		fallthrough
+	case "rsvper.welcome - invitecode - vidhi":
+		// Return which event values have to be filled & save updates
+		event := Vidhi
+		phoneNumber := getPhoneNumberFromContext(wr.QueryResult.OutputContexts)
+		inviteCode := getInviteCodeFromContext(wr.QueryResult.OutputContexts)
+		if inviteCode == -1 {
+			log.Fatalf("%s | %s | Couldn't find the invite code", sessionID, responseID)
+		}
+		log.Printf("\nIntent: %s - Starting fulfillment for invite code: %d", intent, inviteCode)
+		followupIntentName = saveRsvpCnt(event, wr.QueryResult.OutputContexts[0].Parameters.Fields, inviteCode, phoneNumber)
 	default:
-		log.Println("No slot-filling or fulfillment functions matched for inviteCode", wr.QueryResult.Intent.DisplayName)
+		log.Printf("\nNo slot-filling or fulfillment functions matched for intent: %s", wr.QueryResult.Intent.DisplayName)
 	}
 
-	responseBody := DialogflowResponse{
-		Speech: message,
-		Text:   message,
+	respBody := createDialogflowResponse(message, followupIntentName)
+	return events.APIGatewayProxyResponse{Body: respBody, StatusCode: 200}, nil
+}
+
+func createDialogflowResponse(message string, followupIntentName string) string {
+	// TODO: fill out the rest of the fields
+	responseBody := dialogflow.WebhookResponse{}
+
+	if message != "" {
+		responseBody.FulfillmentText = message
 	}
+
+	if followupIntentName != "" {
+		followupIntent := dialogflow.EventInput{
+			LanguageCode: "en",
+			Name:         followupIntentName,
+		}
+		log.Printf("Followup Intent: %+v", followupIntent)
+		responseBody.FollowupEventInput = &followupIntent
+	}
+
+	log.Printf("\nResponse body: %+v", responseBody)
 
 	var buf bytes.Buffer
 
 	body, err := json.Marshal(responseBody)
 	if err != nil {
-		return events.APIGatewayProxyResponse{StatusCode: 400}, err
+		log.Fatalf("Unable to parse error response - error: ", err)
+		// return events.APIGatewayProxyResponse{StatusCode: 400}, err
 	}
 	json.HTMLEscape(&buf, body)
 
-	return events.APIGatewayProxyResponse{Body: buf.String(), StatusCode: 200}, nil
+	return buf.String()
 }
 
-func InviteCodeFulfillment(inviteCode int) string {
+func saveRsvpCnt(event Event, parameters map[string]*structpb.Value, inviteCode int, phoneNumber string) string {
+	rsvpCnt := getRsvpCounts(event, parameters)
+	if rsvpCnt == -1 {
+		log.Fatalf("%s | %s | Couldn't find the rsvp count for event: %s", sessionID, responseID, event.Name)
+	}
+
+	eventRsvps := make(map[Event]int)
+	eventRsvps[event] = rsvpCnt
+
+	saveRsvp(inviteCode, phoneNumber, eventRsvps)
+
+	invitedFamily := findInvitedFamily(inviteCode)
+	return getFollowupEventAction(invitedFamily, event)
+}
+
+func getRsvpCounts(event Event, values map[string]*structpb.Value) int {
+	rsvpCnt := -1
+	for key, value := range values {
+		if CaseInsensitiveContains(key, ".original") {
+			continue
+		}
+		if CaseInsensitiveContains(key, event.Name) && CaseInsensitiveContains(key, "rsvp") {
+			rsvpCnt = int(value.GetNumberValue())
+			break
+		}
+	}
+	return rsvpCnt
+}
+
+func getInviteCodeFromContext(contexts []*dialogflow.Context) int {
+	inviteCode := -1
+	parameterValue := getFromContext(contexts, "invite_code")
+	if parameterValue != nil {
+		inviteCode = int(parameterValue.GetNumberValue())
+	}
+	return inviteCode
+}
+
+func getPhoneNumberFromContext(contexts []*dialogflow.Context) string {
+	phoneNumber := ""
+	parameterValue := getFromContext(contexts, "twilio_sender_id")
+	if parameterValue != nil {
+		phoneNumber = parameterValue.GetStringValue()
+	}
+	return phoneNumber
+}
+
+
+
+func getFromContext(contexts []*dialogflow.Context, givenParameterKey string) *structpb.Value {
+	var givenParameterValue *structpb.Value
+	for _, c := range contexts {
+		for parameterKey, parameterValue := range c.Parameters.GetFields() {
+			if parameterKey == givenParameterKey {
+				// log.Printf("key: %s value: %s", parameterKey, parameterValue)
+				givenParameterValue = parameterValue
+				break
+			}
+		}
+	}
+	return givenParameterValue
+}
+
+func InviteCodeFulfillment(inviteCode int) (string, string) {
 	// inviteNumber, err := strconv.Atoi(inviteCode)
 	// if err != nil {
 	// 	log.Fatalf("Unable to convert invite code(%s) to a number: %v", inviteCode, err)
 	// }
 	invitedFamily := findInvitedFamily(inviteCode)
+	log.Printf("\nReturned Invited_family row %+v", invitedFamily)
+	var intent string
 	message := fmt.Sprintf("You must be %s.\nYou're invited to", invitedFamily.InviteName)
 	if invitedFamily.VidhiInvited > 0 {
-		message += fmt.Sprintf("\nVidhi: %d", invitedFamily.VidhiInvited)
+		message += eventInviteMsg(Vidhi, invitedFamily.VidhiInvited)
+		intent = Vidhi.DialogflowAction
 	}
 	if invitedFamily.GarbaInvited > 0 {
-		message += fmt.Sprintf("\nGarba: %d", invitedFamily.GarbaInvited)
+		message += eventInviteMsg(Garba, invitedFamily.GarbaInvited)
+		intent = Garba.DialogflowAction
 	}
 	if invitedFamily.WeddingInvited > 0 {
-		message += fmt.Sprintf("\nWedding: %d", invitedFamily.WeddingInvited)
+		message += eventInviteMsg(Wedding, invitedFamily.WeddingInvited)
+		intent = Wedding.DialogflowAction
+	}
+
+	message += fmt.Sprintf("\nWould you like to RSVP now?")
+
+	return message, intent
+}
+
+func getFollowupEventAction(invitedFamily InvitedFamily, currentEvent Event) string {
+	var followupAction string
+
+	switch {
+	case invitedFamily.VidhiInvited > 0 && currentEvent != Vidhi:
+		followupAction = Vidhi.DialogflowAction
+	case invitedFamily.GarbaInvited > 0 && currentEvent != Garba:
+		followupAction = Garba.DialogflowAction
+	case invitedFamily.WeddingInvited > 0 && currentEvent != Wedding:
+		followupAction = Wedding.DialogflowAction
+	default:
+		log.Printf("Yay!! No more events to rsvp for")
+	}
+
+	return followupAction
+}
+
+func eventInviteMsg(event Event, invited int) string {
+	message := fmt.Sprintf("\n%s: ", event.Name)
+	switch invited {
+	case NULL_INVITEES:
+		message = ""
+	case MAX_INVITEES:
+		message += "full family"
+	default:
+		message += strconv.Itoa(invited)
 	}
 	return message
 }
@@ -135,58 +309,22 @@ func CaseInsensitiveContains(s, substr string) bool {
 	return strings.Contains(s, substr)
 }
 
-func extractRsvps(values map[string]*structpb.Value) map[Event]int {
-	rsvps := make(map[Event]int)
-	for key, value := range values {
-		if CaseInsensitiveContains(key, ".original") {
-			continue
-		}
-
-		switch {
-		case CaseInsensitiveContains(key, Vidhi.Name):
-			rsvps[Vidhi] = int(value.GetNumberValue())
-			break
-		case CaseInsensitiveContains(key, Garba.Name):
-			rsvps[Garba] = int(value.GetNumberValue())
-			break
-		case CaseInsensitiveContains(key, Wedding.Name):
-			rsvps[Wedding] = int(value.GetNumberValue())
-			break
-		default:
-			log.Printf("An unexpected queryResult.outputContexts.parameters key was returned: %s", key)
-		}
-	}
-	return rsvps
-}
-
 func findInvitedFamily(inviteNumber int) InvitedFamily {
-	// Assume rows are ordered by invite code
-	doubleWrappedInvitedFamily, err := getInvitedFamilyRow(inviteNumber + 1) // Add one for the header
+	wrappedInvitedFamily, _, err := SearchForInvitedFamily(inviteNumber)
 	if err != nil {
 		log.Fatalf("Unable to retrieve data from sheet: %v", err)
 	}
-	wrappedInvitedFamily := doubleWrappedInvitedFamily[0]
 
-	// if they are not ordered by invite code
-	if wrappedInvitedFamily == nil || len(wrappedInvitedFamily) == 0 {
-		wrappedInvitedFamily, err = SearchForInvitedFamily(inviteNumber)
-		if err != nil {
-			log.Fatalf("Unable to retrieve data from sheet: %v", err)
-		}
-	}
-
-	if wrappedInvitedFamily == nil {
-		return InvitedFamily{}
-	}
+	log.Printf("Invited family for invite code %d - %+v", inviteNumber, wrappedInvitedFamily)
 
 	// Todo: break into separate function
-	inviteCodeFromInvitedFamily, _ := strconv.Atoi(fmt.Sprint(wrappedInvitedFamily[3]))
-	vidhiInvited, _ := strconv.Atoi(fmt.Sprint(wrappedInvitedFamily[4]))
-	vidhiRsvpd, _ := strconv.Atoi(fmt.Sprint(wrappedInvitedFamily[5]))
-	garbaInvited, _ := strconv.Atoi(fmt.Sprint(wrappedInvitedFamily[6]))
-	garbaRsvpd, _ := strconv.Atoi(fmt.Sprint(wrappedInvitedFamily[7]))
-	weddingInvited, _ := strconv.Atoi(fmt.Sprint(wrappedInvitedFamily[8]))
-	weddingRsvpd, _ := strconv.Atoi(fmt.Sprint(wrappedInvitedFamily[9]))
+	inviteCodeFromInvitedFamily, _ := convertSheetCellToNumber(wrappedInvitedFamily[3])
+	vidhiInvited, _ := convertSheetCellToNumber(wrappedInvitedFamily[4])
+	vidhiRsvpd, _ := convertSheetCellToNumber(wrappedInvitedFamily[5])
+	garbaInvited, _ := convertSheetCellToNumber(wrappedInvitedFamily[6])
+	garbaRsvpd, _ := convertSheetCellToNumber(wrappedInvitedFamily[7])
+	weddingInvited, _ := convertSheetCellToNumber(wrappedInvitedFamily[8])
+	weddingRsvpd, _ := convertSheetCellToNumber(wrappedInvitedFamily[9])
 
 	return InvitedFamily{
 		Origin:         fmt.Sprint(wrappedInvitedFamily[0]),
@@ -202,22 +340,37 @@ func findInvitedFamily(inviteNumber int) InvitedFamily {
 	}
 }
 
-func SearchForInvitedFamily(inviteNumber int) ([]interface{}, error) {
+func convertSheetCellToNumber(data interface{}) (int, error) {
+	switch fmt.Sprint(data) {
+	case "NULL":
+		return 0, nil
+	case "ALL":
+		return MAX_INVITEES, nil
+	default:
+		i, err := strconv.Atoi(fmt.Sprint(data))
+		return i, err
+	}
+}
+
+func SearchForInvitedFamily(inviteNumber int) ([]interface{}, int, error) {
 	colRange := "A2:J" + strconv.Itoa(TOTAL_INVITED_FAMILY)
 	allInvitedFamilies, err := getGoogleSheetsData(INVITED_FAMILY, colRange)
 	if err != nil {
-		return nil, err
+		return nil, -1, err
 	}
 
 	var invitedFamily []interface{}
+	var rowNumber int
 	for i, currentInvitedFamily := range allInvitedFamilies {
+		// log.Printf("Current invited family: %+v", currentInvitedFamily)
 		if len(currentInvitedFamily) > 3 {
-			currentInviteNumber, err := extractNumber(currentInvitedFamily[3])
+			currentInviteNumber, err := convertSheetCellToNumber(currentInvitedFamily[3])
 			if err != nil || currentInviteNumber == -1 {
 				log.Fatalf("Invite code for entry (%s) wasn't a string or int. Error: +%v", strconv.Itoa(i), err)
 			}
 			if err == nil && inviteNumber == currentInviteNumber {
 				invitedFamily = currentInvitedFamily
+				rowNumber = i + 2 // 1 for header & 1 to convert from 0-based to 1-based
 				break
 			}
 
@@ -225,37 +378,13 @@ func SearchForInvitedFamily(inviteNumber int) ([]interface{}, error) {
 	}
 	// TODO error not found?
 
-	return invitedFamily, nil
+	return invitedFamily, rowNumber, nil
 }
 
-func extractNumber(unknownType interface{}) (int, error) {
-	var currentInviteNumber int
-	switch unknownType.(type) {
-	case string:
-		wrappedCurrentInviteNumber, err := strconv.Atoi(unknownType.(string))
-		if err != nil {
-			return -1, err
-		}
-		currentInviteNumber = wrappedCurrentInviteNumber
-		break
-	case int:
-		currentInviteNumber = unknownType.(int)
-		break
-	default:
-		return -1, errors.New("Unable to convert data to int")
-	}
-	return currentInviteNumber, nil
-}
-
-func getInvitedFamilyRow(rowNumber int) ([][]interface{}, error) {
-	colRange := "A" + strconv.Itoa(rowNumber) + ":J" + strconv.Itoa(rowNumber)
-	return getGoogleSheetsData(INVITED_FAMILY, colRange) // TODO possible out of range errpr
-}
-
-func saveRsvp(inviteCode int, phoneNumber string, sessionID string, rsvps map[Event]int) {
+func saveRsvp(inviteCode int, phoneNumber string, rsvps map[Event]int) {
 
 	// Save to Update Event
-	resp, err := createUpdateEvents(strconv.Itoa(inviteCode), phoneNumber, sessionID, rsvps)
+	resp, err := createUpdateEvents(strconv.Itoa(inviteCode), phoneNumber, rsvps)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -263,26 +392,30 @@ func saveRsvp(inviteCode int, phoneNumber string, sessionID string, rsvps map[Ev
 	log.Printf("Http status code for appending an update event: +%v", resp.HTTPStatusCode)
 
 	// Save to Invited Family
-	batchResp, batchErr := updateInvitedFamilyRsvp(inviteCode+1, inviteCode, phoneNumber, rsvps)
+	batchResp, batchErr := updateInvitedFamilyRsvp(inviteCode, rsvps)
 	if batchErr != nil {
 		log.Fatal(batchErr)
 	}
 	log.Printf("Http status code for updating invited family RSVP: +%v", batchResp.HTTPStatusCode)
 }
 
-func createUpdateEvents(inviteCode string, phoneNumber string, sessionID string, rsvps map[Event]int) (*sheets.AppendValuesResponse, error) {
+func createUpdateEvents(inviteCode string, phoneNumber string, rsvps map[Event]int) (*sheets.AppendValuesResponse, error) {
 	// Save to Update Event
 	var rows [][]interface{}
 	for event, attendees := range rsvps {
 		var rowData []interface{}
-		rowData = append(rowData, inviteCode, phoneNumber, event.Name, attendees, time.Now(), sessionID)
+		rowData = append(rowData, inviteCode, phoneNumber, event.Name, attendees, time.Now(), sessionID, responseID)
 		rows = append(rows, rowData)
 	}
 
 	return appendGoogleSheetsData(UPDATE_EVENT, rows)
 }
 
-func updateInvitedFamilyRsvp(rowNumber int, inviteCode int, phoneNumber string, rsvps map[Event]int) (*sheets.BatchUpdateValuesResponse, error) {
+func updateInvitedFamilyRsvp(inviteCode int, rsvps map[Event]int) (*sheets.BatchUpdateValuesResponse, error) {
+	_, rowNumber, err := SearchForInvitedFamily(inviteCode)
+	if err != nil {
+		log.Fatalf("Unable to update Invited Family rsvp as we can't retrieve the row number: %v", err)
+	}
 
 	// Save to Invited Family
 	var batchValues []*sheets.ValueRange
@@ -337,31 +470,6 @@ func getGoogleSheetsClient() *sheets.Service {
 	}
 
 	return srv
-}
-
-// Handler is our lambda handler invoked by the `lambda.Start` function call
-func HandlerOrig(ctx context.Context) (Response, error) {
-	var buf bytes.Buffer
-
-	body, err := json.Marshal(map[string]interface{}{
-		"message": "Go Serverless v1.0! Your function executed successfully!",
-	})
-	if err != nil {
-		return Response{StatusCode: 404}, err
-	}
-	json.HTMLEscape(&buf, body)
-
-	resp := Response{
-		StatusCode:      200,
-		IsBase64Encoded: false,
-		Body:            buf.String(),
-		Headers: map[string]string{
-			"Content-Type":           "application/json",
-			"X-MyCompany-Func-Reply": "hello-handler",
-		},
-	}
-
-	return resp, nil
 }
 
 func main() {
