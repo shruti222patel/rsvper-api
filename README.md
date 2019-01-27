@@ -55,6 +55,8 @@ Rsvper facilitates makeing and collecting RSVPs via text messages and (in the fu
 - Dockerize app
 - Add end of conversation message (after they've rsvp'ed to all the events they've been invited to)
 - Allow users to skip specific rsvps
+- Allow users to update specific even rsvps (instead of going through the welcome flow)
+- Allow users to reset their conversation (by deleting all their contexts)
 
 ## Database Structure
 ### INVITED_FAMILY
