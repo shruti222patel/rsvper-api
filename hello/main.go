@@ -27,10 +27,11 @@ import (
 // https://serverless.com/framework/docs/providers/aws/events/apigateway/#lambda-proxy-integration
 type Response events.APIGatewayProxyResponse
 type Event struct {
-	Name             string
-	InvitedCol       string
-	RsvpdCol         string
-	DialogflowAction string
+	Name                   string
+	InvitedCol             string
+	RsvpdCol               string
+	DialogflowAction       string
+	DialogflowRsvpVariable string
 }
 
 const (
@@ -57,7 +58,7 @@ type InvitedFamily struct {
 
 func (invitedFamily *InvitedFamily) totalEventsInvitedTo() int {
 	var totalEvents int
-	switch{
+	switch {
 	case invitedFamily.VidhiInvited > 0:
 		totalEvents++
 	case invitedFamily.GarbaInvited > 0:
@@ -68,13 +69,16 @@ func (invitedFamily *InvitedFamily) totalEventsInvitedTo() int {
 	return totalEvents
 }
 
-var Vidhi = Event{Name: "VIDHI", InvitedCol: "E", RsvpdCol: "F", DialogflowAction: "actions_rsvp_vidhi"}
-var Garba = Event{Name: "GARBA", InvitedCol: "G", RsvpdCol: "H", DialogflowAction: "actions_rsvp_garba"}
-var Wedding = Event{Name: "WEDDING", InvitedCol: "I", RsvpdCol: "J", DialogflowAction: "actions_rsvp_wedding"}
+var Vidhi = Event{Name: "VIDHI", InvitedCol: "E", RsvpdCol: "F", DialogflowAction: "actions_rsvp_vidhi", DialogflowRsvpVariable: "vidhi_rsvpd"}
+var Garba = Event{Name: "GARBA", InvitedCol: "G", RsvpdCol: "H", DialogflowAction: "actions_rsvp_garba", DialogflowRsvpVariable: "garba_rsvpd"}
+var Wedding = Event{Name: "WEDDING", InvitedCol: "I", RsvpdCol: "J", DialogflowAction: "actions_rsvp_wedding", DialogflowRsvpVariable: "wedding_rsvpd"}
+
+var AllEvents = []Event{Vidhi, Garba, Wedding}
 
 var sessionID string
 var responseID string
-var request string
+var intent string
+var requestStr string
 
 func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	fmt.Println("Received body: ", request.Body)
@@ -87,64 +91,46 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	}
 	responseID = wr.ResponseId
 	sessionID = wr.Session
+	requestStr = fmt.Sprintf("+%v", request.Body)
 	// request = fmt.Sprintf("%+v", request.Body)
 	log.Printf("Processing responseId: %s and sessionId: %s", responseID, sessionID)
 	// log.Printf("Parsed body: +%v", wr.QueryResult.OutputContexts[0].Parameters)
-	intent := wr.QueryResult.Intent.DisplayName
+	intent = wr.QueryResult.Intent.DisplayName
 	var message string
 	var followupIntentName string
 	switch intent {
 	case "rsvper.welcome":
 		followupIntentName = "rsvper.welcome-invitecode"
+	case "rsvper.invitecode":
+		fallthrough
 	case "rsvper.welcome - invitecode":
 		// Given invite code return number of invitees
 		fields := wr.QueryResult.Parameters.Fields
 		inviteCode := int(fields["invite_code"].GetNumberValue())
 		log.Printf("\nIntent: %s - Starting fulfillment for invite code: %d", intent, inviteCode)
 		message, _ = InviteCodeFulfillment(inviteCode)
+	case "rsvper.invitecode - yes":
+		fallthrough
 	case "rsvper.welcome - invitecode - yes":
 		// Given invite code return number of invitees
 		inviteCode := getInviteCodeFromContext(wr.QueryResult.OutputContexts)
 		log.Printf("\nIntent: %s - Starting fulfillment for invite code: %d", intent, inviteCode)
-		_, followupIntentName = InviteCodeFulfillment(inviteCode)	
-	case "rsvper.rsvp-wedding":
+		_, followupIntentName = InviteCodeFulfillment(inviteCode)
+	case "rsvper.invitecode - yes - wedding":
 		fallthrough
 	case "rsvper.welcome - invitecode - yes - wedding":
-		fallthrough
-	case "rsvper.welcome - invitecode - wedding":
 		// Return which event values have to be filled & save updates
-		event := Wedding
-		phoneNumber := getPhoneNumberFromContext(wr.QueryResult.OutputContexts)
-		inviteCode := getInviteCodeFromContext(wr.QueryResult.OutputContexts)
-		if inviteCode == -1 {
-			log.Fatalf("%s | %s | Couldn't find the invite code", sessionID, responseID)
-		}
-		log.Printf("\nIntent: %s - Starting fulfillment for invite code: %d", intent, inviteCode)
-		followupIntentName = saveRsvpCnt(event, wr.QueryResult.OutputContexts[0].Parameters.Fields, inviteCode, phoneNumber)
+		message, followupIntentName = saveRsvpCnt(Wedding, wr.QueryResult.OutputContexts)
+	case "rsvper.invitecode - yes - garba":
+		fallthrough
 	case "rsvper.welcome - invitecode - yes - garba":
-		fallthrough
-	case "rsvper.welcome - invitecode - garba":
 		// Return which event values have to be filled & save updates
-		event := Garba
-		phoneNumber := getPhoneNumberFromContext(wr.QueryResult.OutputContexts)
-		inviteCode := getInviteCodeFromContext(wr.QueryResult.OutputContexts)
-		if inviteCode == -1 {
-			log.Fatalf("%s | %s | Couldn't find the invite code", sessionID, responseID)
-		}
-		log.Printf("\nIntent: %s - Starting fulfillment for invite code: %d", intent, inviteCode)
-		followupIntentName = saveRsvpCnt(event, wr.QueryResult.OutputContexts[0].Parameters.Fields, inviteCode, phoneNumber)
+		message, followupIntentName = saveRsvpCnt(Garba, wr.QueryResult.OutputContexts)
+	case "rsvper.invitecode - yes - vidhi":
+		fallthrough
 	case "rsvper.welcome - invitecode - yes - vidhi":
-		fallthrough
-	case "rsvper.welcome - invitecode - vidhi":
 		// Return which event values have to be filled & save updates
-		event := Vidhi
-		phoneNumber := getPhoneNumberFromContext(wr.QueryResult.OutputContexts)
-		inviteCode := getInviteCodeFromContext(wr.QueryResult.OutputContexts)
-		if inviteCode == -1 {
-			log.Fatalf("%s | %s | Couldn't find the invite code", sessionID, responseID)
-		}
-		log.Printf("\nIntent: %s - Starting fulfillment for invite code: %d", intent, inviteCode)
-		followupIntentName = saveRsvpCnt(event, wr.QueryResult.OutputContexts[0].Parameters.Fields, inviteCode, phoneNumber)
+		message, followupIntentName = saveRsvpCnt(Vidhi, wr.QueryResult.OutputContexts)
 	default:
 		log.Printf("\nNo slot-filling or fulfillment functions matched for intent: %s", wr.QueryResult.Intent.DisplayName)
 	}
@@ -176,27 +162,52 @@ func createDialogflowResponse(message string, followupIntentName string) string 
 
 	body, err := json.Marshal(responseBody)
 	if err != nil {
-		log.Fatalf("Unable to parse error response - error: ", err)
-		// return events.APIGatewayProxyResponse{StatusCode: 400}, err
+		log.Fatal("Unable to parse error response - error: ", err)
 	}
 	json.HTMLEscape(&buf, body)
 
 	return buf.String()
 }
 
-func saveRsvpCnt(event Event, parameters map[string]*structpb.Value, inviteCode int, phoneNumber string) string {
-	rsvpCnt := getRsvpCounts(event, parameters)
+func rsvpdEvents(contexts []*dialogflow.Context) map[Event]int {
+	rsvpdEvents := make(map[Event]int)
+	for _, c := range contexts {
+		if CaseInsensitiveContains(c.Name, "rsvperwelcome-invitecode-yes-followup") {
+			for _, e := range AllEvents {
+				paramteters := c.Parameters.GetFields()
+				if val, ok := paramteters[e.DialogflowRsvpVariable]; ok {
+					rsvpdEvents[e] = int(val.GetNumberValue())
+				}
+			}
+			break
+		}
+	}
+	fmt.Println("Already Rsvp'd events: ", rsvpdEvents)
+	return rsvpdEvents
+}
+
+func saveRsvpCnt(currentEvent Event, contexts []*dialogflow.Context) (string, string) {
+	phoneNumber := getPhoneNumberFromContext(contexts)
+	inviteCode := getInviteCodeFromContext(contexts)
+	if inviteCode == -1 {
+		log.Fatalf("%s | %s | Couldn't find the invite code", sessionID, responseID)
+	}
+	log.Printf("\nIntent: %s - Starting fulfillment for invite code: %d", intent, inviteCode)
+	parameters := contexts[0].Parameters.Fields
+
+	rsvpCnt := getRsvpCounts(currentEvent, parameters)
 	if rsvpCnt == -1 {
-		log.Fatalf("%s | %s | Couldn't find the rsvp count for event: %s", sessionID, responseID, event.Name)
+		log.Fatalf("%s | %s | Couldn't find the rsvp count for current event: %s", sessionID, responseID, currentEvent.Name)
 	}
 
 	eventRsvps := make(map[Event]int)
-	eventRsvps[event] = rsvpCnt
+	eventRsvps[currentEvent] = rsvpCnt
 
 	saveRsvp(inviteCode, phoneNumber, eventRsvps)
-
+	alreadyRsvpdEvents := rsvpdEvents(contexts)
+	alreadyRsvpdEvents[currentEvent] = rsvpCnt
 	invitedFamily := findInvitedFamily(inviteCode)
-	return getFollowupEventAction(invitedFamily, event)
+	return getFollowupEventAction(invitedFamily, currentEvent, alreadyRsvpdEvents)
 }
 
 func getRsvpCounts(event Event, values map[string]*structpb.Value) int {
@@ -230,8 +241,6 @@ func getPhoneNumberFromContext(contexts []*dialogflow.Context) string {
 	}
 	return phoneNumber
 }
-
-
 
 func getFromContext(contexts []*dialogflow.Context, givenParameterKey string) *structpb.Value {
 	var givenParameterValue *structpb.Value
@@ -274,21 +283,30 @@ func InviteCodeFulfillment(inviteCode int) (string, string) {
 	return message, intent
 }
 
-func getFollowupEventAction(invitedFamily InvitedFamily, currentEvent Event) string {
+func getFollowupEventAction(invitedFamily InvitedFamily, currentEvent Event, alreadyRsvpdEvents map[Event]int) (string, string) {
 	var followupAction string
+	var message string
 
 	switch {
-	case invitedFamily.VidhiInvited > 0 && currentEvent != Vidhi:
+	case isNextEvent(Vidhi, currentEvent, alreadyRsvpdEvents, invitedFamily.VidhiInvited):
 		followupAction = Vidhi.DialogflowAction
-	case invitedFamily.GarbaInvited > 0 && currentEvent != Garba:
+	case isNextEvent(Garba, currentEvent, alreadyRsvpdEvents, invitedFamily.GarbaInvited):
 		followupAction = Garba.DialogflowAction
-	case invitedFamily.WeddingInvited > 0 && currentEvent != Wedding:
+	case isNextEvent(Wedding, currentEvent, alreadyRsvpdEvents, invitedFamily.WeddingInvited):
 		followupAction = Wedding.DialogflowAction
 	default:
-		log.Printf("Yay!! No more events to rsvp for")
+		message = "Sweet! We've got you down for: \n"
+		for event, rsvpd := range alreadyRsvpdEvents {
+			message += fmt.Sprintf("%s: %d \n", event.Name, rsvpd)
+		}
 	}
 
-	return followupAction
+	return message, followupAction
+}
+
+func isNextEvent(event Event, currentEvent Event, alreadyRsvpdEvents map[Event]int, totalInvitees int) bool {
+	_, alreadyRsvpd := alreadyRsvpdEvents[event]
+	return !alreadyRsvpd && totalInvitees > 0 && currentEvent != event
 }
 
 func eventInviteMsg(event Event, invited int) string {
@@ -404,7 +422,7 @@ func createUpdateEvents(inviteCode string, phoneNumber string, rsvps map[Event]i
 	var rows [][]interface{}
 	for event, attendees := range rsvps {
 		var rowData []interface{}
-		rowData = append(rowData, inviteCode, phoneNumber, event.Name, attendees, time.Now(), sessionID, responseID)
+		rowData = append(rowData, inviteCode, phoneNumber, event.Name, attendees, time.Now(), sessionID, responseID, requestStr)
 		rows = append(rows, rowData)
 	}
 

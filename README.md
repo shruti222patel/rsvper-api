@@ -53,10 +53,19 @@ Rsvper facilitates makeing and collecting RSVPs via text messages and (in the fu
 
 ## TODO
 - Dockerize app
+- Add all 330 invite codes to the `rsvper.invitecode` (look into automated ways) - rn, typing in `0001`, instead of `1` will result in an error. Maybe look into slotfilling to solve this issue?
+- When default fallback intent is triggered, send alert and/or log in google sheet
+- Build out invite code triggered conversation flow
 - Add end of conversation message (after they've rsvp'ed to all the events they've been invited to)
+- Limit the number of times the default intent asks users to repeat
 - Allow users to skip specific rsvps
 - Allow users to update specific even rsvps (instead of going through the welcome flow)
 - Allow users to reset their conversation (by deleting all their contexts)
+
+## Learnings
+### Dialogflow
+- if you need to match the entire training phrase, you'll have to put ALL the full matching phrases in training - e.g. when you expect the user to only enter a number, you have to add ALL the numbers, just typing in `1`, `6`, `9`, `10` won't give you all the numbers, it won't even give you 1-10. You have to explicitly list all the numbers
+- both contexts & events are used to determine what is the next intent
 
 ## Database Structure
 ### INVITED_FAMILY

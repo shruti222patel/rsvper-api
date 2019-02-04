@@ -206,61 +206,70 @@ var mockRsvpSlotFillingRequest = events.APIGatewayProxyRequest{
 var mockWeddingRsvpFulfillmentRequest = events.APIGatewayProxyRequest{
 	Body: `
 	{
-		"responseId": "f6620d32-181b-40c1-be57-1496812fd383",
+		"responseId": "56399f93-0096-4919-b0bb-5b2b6a1a0898",
 		"queryResult": {
-			"queryText": "2",
+			"queryText": "4",
+			"action": "rsvperwelcome.rsvperwelcome-invitecode.rsvperwelcome-invitecode-yes.rsvperwelcome-invitecode-yes-garba",
 			"parameters": {
-				"wedding_rsvpd": 2
+				"garba_rsvpd": 4.0
 			},
 			"allRequiredParamsPresent": true,
-			"fulfillmentMessages": [
-				{
-					"text": {
-						"text": [
-							""
-						]
-					}
+			"fulfillmentMessages": [{
+				"text": {
+					"text": [""]
 				}
-			],
-			"outputContexts": [
-				{
-					"name": "projects/rsvper-42ec0/agent/sessions/7dc551fb-1701-460b-c079-d4abbabda913/contexts/rsvprinvite-followup",
-					"lifespanCount": 5,
-					"parameters": {
-						"invite_code.original": "300",
-						"wedding_rsvpd.original": "2",
-						"invite_code": 300,
-						"wedding_rsvpd": 2
-					}
-				},
-				{
-					"name": "projects/rsvper-42ec0/agent/sessions/7dc551fb-1701-460b-c079-d4abbabda913/contexts/rsvperwelcome-followup",
-					"parameters": {
-						"invite_code.original": "300",
-						"wedding_rsvpd.original": "2",
-						"invite_code": 300,
-						"wedding_rsvpd": 2
-					}
-				},
-				{
-					"name": "projects/rsvper-42ec0/agent/sessions/7dc551fb-1701-460b-c079-d4abbabda913/contexts/rsvperwelcome-invitecode-followup",
-					"lifespanCount": 9,
-					"parameters": {
-						"invite_code.original": "300",
-						"wedding_rsvpd.original": "2",
-						"invite_code": 300,
-						"wedding_rsvpd": 2
-					}
+			}],
+			"outputContexts": [{
+				"name": "projects/rsvper-42ec0/agent/sessions/7dc551fb-1701-460b-c079-d4abbabda913/contexts/rsvperwelcome-followup",
+				"parameters": {
+					"total_events_rsvpd.original": "",
+					"total_events_rsvpd": "",
+					"garba_rsvpd.original": "4",
+					"invite_code.original": "20",
+					"wedding_rsvpd.original": "4",
+					"garba_rsvpd": 4.0,
+					"vidhi_rsvpd": 4.0,
+					"vidhi_rsvpd.original": "4",
+					"invite_code": 20.0,
+					"wedding_rsvpd": 4.0
 				}
-			],
+			}, {
+				"name": "projects/rsvper-42ec0/agent/sessions/7dc551fb-1701-460b-c079-d4abbabda913/contexts/rsvperwelcome-invitecode-yes-followup",
+				"lifespanCount": 2,
+				"parameters": {
+					"garba_rsvpd.original": "4",
+					"wedding_rsvpd.original": "4",
+					"vidhi_rsvpd": 4.0,
+					"vidhi_rsvpd.original": "4",
+					"wedding_rsvpd": 4.0
+				}
+			}, {
+				"name": "projects/rsvper-42ec0/agent/sessions/7dc551fb-1701-460b-c079-d4abbabda913/contexts/rsvperwelcome-invitecode-followup-2",
+				"lifespanCount": 6,
+				"parameters": {
+					"total_events_rsvpd.original": "",
+					"total_events_rsvpd": "",
+					"garba_rsvpd.original": "4",
+					"invite_code.original": "20",
+					"wedding_rsvpd.original": "4",
+					"garba_rsvpd": 4.0,
+					"vidhi_rsvpd": 4.0,
+					"vidhi_rsvpd.original": "4",
+					"invite_code": 20.0,
+					"wedding_rsvpd": 4.0
+				}
+			}],
 			"intent": {
-				"name": "projects/rsvper-42ec0/agent/intents/31a53897-a029-4732-89ca-ad93cc64e06c",
-				"displayName": "rsvper.rsvp-wedding"
+				"name": "projects/rsvper-42ec0/agent/intents/759df942-dd63-4dd5-983c-6496f56a0f0c",
+				"displayName": "rsvper.welcome - invitecode - yes - garba"
 			},
-			"intentDetectionConfidence": 1,
+			"intentDetectionConfidence": 0.8622753,
 			"languageCode": "en"
 		},
-		"originalDetectIntentRequest": {},
+		"originalDetectIntentRequest": {
+			"payload": {
+			}
+		},
 		"session": "projects/rsvper-42ec0/agent/sessions/7dc551fb-1701-460b-c079-d4abbabda913"
 	}
 	`,
