@@ -275,8 +275,54 @@ var mockWeddingRsvpFulfillmentRequest = events.APIGatewayProxyRequest{
 	`,
 }
 
+var mockRsvpFulfillmentVidhiRequest = events.APIGatewayProxyRequest{
+	Body: `
+{
+  "responseId": "9e5554bf-8ff6-4919-9dd0-9a7798b317d3",
+  "queryResult": {
+    "queryText": "4",
+    "action": "rsvperinvitecode.rsvperinvitecode-yes.rsvperinvitecode-yes-vidhi",
+    "parameters": {
+      "vidhi_rsvpd": 4
+    },
+    "allRequiredParamsPresent": true,
+    "fulfillmentMessages": [
+      {
+        "text": {
+          "text": [
+            ""
+          ]
+        }
+      }
+    ],
+    "outputContexts": [
+      {
+        "name": "projects/rsvper-staging/agent/sessions/2e0dad05-c5be-a2cd-2fe3-889da2d19351/contexts/rsvperinvitecode-yes-followup",
+        "lifespanCount": 8,
+        "parameters": {
+          "wedding_rsvpd.original": "4",
+          "vidhi_rsvpd": 4,
+          "vidhi_rsvpd.original": "4",
+          "wedding_rsvpd": 4
+        }
+      }
+    ],
+    "intent": {
+      "name": "projects/rsvper-staging/agent/intents/7d753c31-3e72-4395-946e-2285c07425da",
+      "displayName": "rsvper.invitecode - yes - vidhi"
+    },
+    "intentDetectionConfidence": 0.784649,
+    "languageCode": "en"
+  },
+  "originalDetectIntentRequest": {
+    "payload": {}
+  },
+  "session": "projects/rsvper-staging/agent/sessions/2e0dad05-c5be-a2cd-2fe3-889da2d19351"
+}`,
+}
+
 func TestInviteCodeFulfillmentHandler(t *testing.T) {
-	response, err := Handler(mockWeddingRsvpFulfillmentRequest)
+	response, err := Handler(mockRsvpFulfillmentVidhiRequest)
 	if err != nil {
 		t.Errorf("Error: +%v", err)
 	}

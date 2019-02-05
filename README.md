@@ -29,11 +29,12 @@ Rsvper facilitates makeing and collecting RSVPs via text messages and (in the fu
     - Local End-to-End Test -> 
         - run `sam local start-api`
         - run `ssh -R rsvper.serveo.net:80:localhost:3000 serveo.net`
-        - you shouldn't have to update the webhook url as the subdomain used by serveo.net will always be the same, but if you do need to: Copy & paste the `https://<forwarding-url>/hello` (forwarding-url printed on the terminal) into the [dialogflow fulfillment webhook](https://console.dialogflow.com/api-client/#/agent/a637c45e-9770-4fcc-acc7-8821de730eaa/fulfillment) -- Remember to press the `Save` button at the bottom of the page
+        - you shouldn't have to update the webhook url as the subdomain used by serveo.net will always be the same, but if you do need to: Copy & paste the `https://<forwarding-url>/bot` (forwarding-url printed on the terminal) into the [dialogflow fulfillment webhook](https://console.dialogflow.com/api-client/#/agent/a637c45e-9770-4fcc-acc7-8821de730eaa/fulfillment) -- Remember to press the `Save` button at the bottom of the page
         - import and run `POST Fulfillment Request for RSVP...` from the postman collection in `docs/`
 
 ### Deployment
 #### Code
+- `make build` to build the binaries for deployment
 - decrypted the secrets file for the given env (i.e. `secrets.dev.yml`, `secrets.staging.yml`, `secrets.prod.yml`) 
 - `serverless deploy --stage <env name>` (make sure you have the correct default creds in your `~/.aws/credentials`)
     - `<env name>` = `dev`, `staging`, or `prod`
@@ -53,7 +54,7 @@ Rsvper facilitates makeing and collecting RSVPs via text messages and (in the fu
     - `brew install ngrok`
     - `ngrok http 3000`
     - update the dialogflow webhook url with the newly generated ngrok forwarding url
-
+- to change the function name: update the folder name, the names in serverless.yml (3 places), and Makefile (2 places)
 
 ## Architecture
 ### App Diagram
@@ -162,3 +163,5 @@ Rsvper facilitates makeing and collecting RSVPs via text messages and (in the fu
 - [Removing .DS_Store](https://stackoverflow.com/questions/18393498/gitignore-all-the-ds-store-files-in-every-folder-and-subfolder)
 ### Go
 - [Stack Traces](https://www.ardanlabs.com/blog/2015/01/stack-traces-in-go.html)
+### Emoji
+- [Emoji Dictonary](https://emojipedia.org/)

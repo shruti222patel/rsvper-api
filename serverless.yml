@@ -61,11 +61,11 @@ package:
    - ./bin/**
 
 functions:
-  hello:
-    handler: bin/hello
+  bot:
+    handler: bin/bot
     events:
       - http:
-          path: hello
+          path: bot
           method: post
     environment:
       GOOGLE_API_CREDS: ${self:custom.secrets.google_api_creds}
@@ -96,7 +96,7 @@ functions:
 #            detail:
 #              state:
 #                - pending
-#      - cloudwatchLog: '/aws/lambda/hello'
+#      - cloudwatchLog: '/aws/lambda/bot'
 #      - cognitoUserPool:
 #          pool: MyUserPool
 #          trigger: PreSignUp

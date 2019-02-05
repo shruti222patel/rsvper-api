@@ -70,7 +70,7 @@ func (invitedFamily *InvitedFamily) totalEventsInvitedTo() int {
 }
 
 var Vidhi = Event{Name: "VIDHI", InvitedCol: "E", RsvpdCol: "F", DialogflowAction: "actions_rsvp_vidhi", DialogflowRsvpVariable: "vidhi_rsvpd"}
-var Garba = Event{Name: "GARBA", InvitedCol: "G", RsvpdCol: "H", DialogflowAction: "actions_rsvp_garba", DialogflowRsvpVariable: "garba_rsvpd"}
+var Garba = Event{Name: "GARBA-RECEPTION", InvitedCol: "G", RsvpdCol: "H", DialogflowAction: "actions_rsvp_garba", DialogflowRsvpVariable: "garba_rsvpd"}
 var Wedding = Event{Name: "WEDDING", InvitedCol: "I", RsvpdCol: "J", DialogflowAction: "actions_rsvp_wedding", DialogflowRsvpVariable: "wedding_rsvpd"}
 
 var AllEvents = []Event{Vidhi, Garba, Wedding}
@@ -183,7 +183,7 @@ func createDialogflowResponse(message string, followupIntentName string) string 
 func rsvpdEvents(contexts []*dialogflow.Context) map[Event]int {
 	rsvpdEvents := make(map[Event]int)
 	for _, c := range contexts {
-		if CaseInsensitiveContains(c.Name, "rsvperwelcome-invitecode-yes-followup") {
+		if CaseInsensitiveContains(c.Name, "rsvperwelcome-invitecode-yes-followup") || CaseInsensitiveContains(c.Name, "rsvperinvitecode-yes-followup") {
 			for _, e := range AllEvents {
 				paramteters := c.Parameters.GetFields()
 				if val, ok := paramteters[e.DialogflowRsvpVariable]; ok {
@@ -289,7 +289,7 @@ func InviteCodeFulfillment(inviteCode int) (string, string) {
 		intent = Wedding.DialogflowAction
 	}
 
-	message += fmt.Sprintf(".\nWould you like to RSVP now?")
+	message += fmt.Sprintf("\nWould you like to RSVP now?")
 
 	return message, intent
 }
@@ -306,10 +306,11 @@ func getFollowupEventAction(invitedFamily InvitedFamily, currentEvent Event, alr
 	case isNextEvent(Wedding, currentEvent, alreadyRsvpdEvents, invitedFamily.WeddingInvited):
 		followupAction = Wedding.DialogflowAction
 	default:
-		message = "Sweet! We've got you down for: \n"
+		message = "We've got you down for: \n"
 		for event, rsvpd := range alreadyRsvpdEvents {
 			message += fmt.Sprintf("%s: %d \n", event.Name, rsvpd)
 		}
+		message += "See you there! :) \nP.S. Come chat again if you need to update your RSVP." // Tried & failed -- emoji.Sprint(":tada:") \U0001f389
 	}
 
 	return message, followupAction
