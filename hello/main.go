@@ -81,26 +81,14 @@ var intent string
 var requestStr string
 
 func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	fmt.Println("Received body: ", request.Body)
-
-	var err error
-	wr := dialogflow.WebhookRequest{}
-	unmarshaller := &jsonpb.Unmarshaler{AllowUnknownFields: true}
-	if err = unmarshaller.Unmarshal(strings.NewReader(request.Body), &wr); err != nil {
+	wr, err := parseRequestBody(request)
+	if err != nil {
 		log.Fatal(err)
 	}
-	responseID = wr.ResponseId
-	sessionID = wr.Session
-	requestStr = fmt.Sprintf("+%v", request.Body)
-	// request = fmt.Sprintf("%+v", request.Body)
-	log.Printf("Processing responseId: %s and sessionId: %s", responseID, sessionID)
-	// log.Printf("Parsed body: +%v", wr.QueryResult.OutputContexts[0].Parameters)
-	intent = wr.QueryResult.Intent.DisplayName
+
 	var message string
 	var followupIntentName string
 	switch intent {
-	case "rsvper.welcome":
-		followupIntentName = "rsvper.welcome-invitecode"
 	case "rsvper.invitecode":
 		fallthrough
 	case "rsvper.welcome - invitecode":
@@ -143,6 +131,23 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	respBody := createDialogflowResponse(message, followupIntentName)
 	return events.APIGatewayProxyResponse{Body: respBody, StatusCode: 200}, nil
+}
+
+func parseRequestBody(request events.APIGatewayProxyRequest) (dialogflow.WebhookRequest, error) {
+	fmt.Println("Received body: ", request.Body)
+
+	var err error
+	wr := dialogflow.WebhookRequest{}
+	unmarshaller := &jsonpb.Unmarshaler{AllowUnknownFields: true}
+	if err = unmarshaller.Unmarshal(strings.NewReader(request.Body), &wr); err != nil {
+		return wr, err
+	}
+	responseID = wr.ResponseId
+	sessionID = wr.Session
+	requestStr = fmt.Sprintf("+%v", request.Body)
+	intent = wr.QueryResult.Intent.DisplayName
+	log.Printf("Received intent: %s, Processing responseId: %s and sessionId: %s", intent, responseID, sessionID)
+	return wr, err
 }
 
 func createDialogflowResponse(message string, followupIntentName string) string {
