@@ -116,16 +116,22 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		inviteCode := getInviteCodeFromContext(wr.QueryResult.OutputContexts)
 		log.Printf("\nIntent: %s - Starting fulfillment for invite code: %d", intent, inviteCode)
 		_, followupIntentName = InviteCodeFulfillment(inviteCode)
+	case "rsvper.rsvp-wedding":
+		fallthrough
 	case "rsvper.invitecode - yes - wedding":
 		fallthrough
 	case "rsvper.welcome - invitecode - yes - wedding":
 		// Return which event values have to be filled & save updates
 		message, followupIntentName = saveRsvpCnt(Wedding, wr.QueryResult.OutputContexts)
+	case "rsvper.rsvp-garba":
+		fallthrough
 	case "rsvper.invitecode - yes - garba":
 		fallthrough
 	case "rsvper.welcome - invitecode - yes - garba":
 		// Return which event values have to be filled & save updates
 		message, followupIntentName = saveRsvpCnt(Garba, wr.QueryResult.OutputContexts)
+	case "rsvper.rsvp-vidhi":
+		fallthrough
 	case "rsvper.invitecode - yes - vidhi":
 		fallthrough
 	case "rsvper.welcome - invitecode - yes - vidhi":
@@ -264,7 +270,7 @@ func InviteCodeFulfillment(inviteCode int) (string, string) {
 	invitedFamily := findInvitedFamily(inviteCode)
 	log.Printf("\nReturned Invited_family row %+v", invitedFamily)
 	var intent string
-	message := fmt.Sprintf("You must be %s.\nYou're invited to", invitedFamily.InviteName)
+	message := fmt.Sprintf("You must be %s.\nYou're invited to: ", invitedFamily.InviteName)
 	if invitedFamily.VidhiInvited > 0 {
 		message += eventInviteMsg(Vidhi, invitedFamily.VidhiInvited)
 		intent = Vidhi.DialogflowAction
@@ -278,7 +284,7 @@ func InviteCodeFulfillment(inviteCode int) (string, string) {
 		intent = Wedding.DialogflowAction
 	}
 
-	message += fmt.Sprintf("\nWould you like to RSVP now?")
+	message += fmt.Sprintf(".\nWould you like to RSVP now?")
 
 	return message, intent
 }
@@ -335,6 +341,10 @@ func findInvitedFamily(inviteNumber int) InvitedFamily {
 
 	log.Printf("Invited family for invite code %d - %+v", inviteNumber, wrappedInvitedFamily)
 
+	return toInvitedFamily(wrappedInvitedFamily)
+}
+
+func toInvitedFamily(wrappedInvitedFamily []interface{}) InvitedFamily {
 	// Todo: break into separate function
 	inviteCodeFromInvitedFamily, _ := convertSheetCellToNumber(wrappedInvitedFamily[3])
 	vidhiInvited, _ := convertSheetCellToNumber(wrappedInvitedFamily[4])
@@ -467,7 +477,6 @@ func getGoogleSheetsData(sheetName string, colRange string) ([][]interface{}, er
 	// Retrieve Data
 	readRange := sheetName + "!" + colRange
 	resp, err := getGoogleSheetsClient().Spreadsheets.Values.Get(SPREADSHEET_ID, readRange).Do()
-	// log.Printf("Response from google sheets: +%v", resp)
 	return resp.Values, err
 }
 
@@ -492,7 +501,6 @@ func getGoogleSheetsClient() *sheets.Service {
 
 func main() {
 	fmt.Println("Start app")
-	// os.Setenv("_LAMBDA_SERVER_PORT", "8080")
 	fmt.Println("Start lambda handler")
 	lambda.Start(Handler)
 }

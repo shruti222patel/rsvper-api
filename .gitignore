@@ -13,8 +13,6 @@ secrets.staging.yml
 secrets.qa.yml
 secrets.prod.yml
 
-hello/credentials.json
-
 Makefile
 template.yml
 

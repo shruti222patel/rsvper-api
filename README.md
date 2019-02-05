@@ -19,7 +19,6 @@ Rsvper facilitates makeing and collecting RSVPs via text messages and (in the fu
     - Update lambda function -> Run `make build` Don't restart sam-local because it uses "hot reloading" (so, files are updated without losing the app's state).
     - Update secrets -> (Make sure to encrypt/decrypt as needed) Run `serverless sam export --output ./template.yml` & Restart `sam local start-api`
     - Update serverless configs -> Restart `sam local start-api`
-
 12. For testing:
     - Function Integration Test -> 
         - add google api creds to the `Makefile`
@@ -32,14 +31,24 @@ Rsvper facilitates makeing and collecting RSVPs via text messages and (in the fu
         - run `ssh -R rsvper.serveo.net:80:localhost:3000 serveo.net`
         - you shouldn't have to update the webhook url as the subdomain used by serveo.net will always be the same, but if you do need to: Copy & paste the `https://<forwarding-url>/hello` (forwarding-url printed on the terminal) into the [dialogflow fulfillment webhook](https://console.dialogflow.com/api-client/#/agent/a637c45e-9770-4fcc-acc7-8821de730eaa/fulfillment) -- Remember to press the `Save` button at the bottom of the page
         - import and run `POST Fulfillment Request for RSVP...` from the postman collection in `docs/`
-### Prod Deployment
-- `serverless deploy` (make sure you have the correct default creds in your `~/.aws/credentials`)
+
+### Deployment
+#### Code
+- decrypted the secrets file for the given env (i.e. `secrets.dev.yml`, `secrets.staging.yml`, `secrets.prod.yml`) 
+- `serverless deploy --stage <env name>` (make sure you have the correct default creds in your `~/.aws/credentials`)
+    - `<env name>` = `dev`, `staging`, or `prod`
 - to completely redeploy the entire stack and not just update the lambda function code:
     - delete the cloud formation stack (you may have to delete the s3 bucket first)
     - `serverless deploy`
+#### Dialogflow Bot
+1. `Export as Zip` from `Rsvper-staging`
+2. `Restore from Zip` in `Rsvper`
+3. Update the `Rsvper` Fulfillment Webhook Url to the apporiate one for Prod
+4. Save the exported version with the date (still have to decide on where to store it)
+
 ### Additional Config
-- Encrypt creds: `serverless encrypt --stage dev --password <password>`
-- Decrypt creds: `serverless dncrypt --stage dev --password <password>`
+- Encrypt creds: `serverless encrypt --stage <env name> --password <password>`
+- Decrypt creds: `serverless decrypt --stage <env name> --password <password>`
 - if you need to switch to `ngrok` insteady of `serveo.net`:
     - `brew install ngrok`
     - `ngrok http 3000`
