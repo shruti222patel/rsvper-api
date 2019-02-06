@@ -28,7 +28,7 @@ provider:
   profile: serverless-admin
 
 # you can overwrite defaults here
-  stage: ${opt:stage, 'dev'}
+  stage: ${opt:stage, 'staging'}
   region: us-east-1
 
 # you can add statements to the Lambda function's IAM Role here
@@ -68,6 +68,7 @@ functions:
           path: bot
           method: post
     environment:
+      SPREADSHEET_ID: ${self:custom.secrets.spreadsheet_id}
       GOOGLE_API_CREDS: ${self:custom.secrets.google_api_creds}
 
 

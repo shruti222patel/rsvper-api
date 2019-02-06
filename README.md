@@ -35,9 +35,9 @@ Rsvper facilitates makeing and collecting RSVPs via text messages and (in the fu
 ### Deployment
 #### Code
 - `make build` to build the binaries for deployment
-- decrypted the secrets file for the given env (i.e. `secrets.dev.yml`, `secrets.staging.yml`, `secrets.prod.yml`) 
+- decrypted the secrets file for the given env (i.e. `secrets.demo.yml`, `secrets.staging.yml`, `secrets.prod.yml`) 
 - `serverless deploy --stage <env name>` (make sure you have the correct default creds in your `~/.aws/credentials`)
-    - `<env name>` = `dev`, `staging`, or `prod`
+    - `<env name>` = `demo`, `staging`, or `prod`
 - to completely redeploy the entire stack and not just update the lambda function code:
     - delete the cloud formation stack (you may have to delete the s3 bucket first)
     - `serverless deploy`

@@ -8,7 +8,7 @@ bin
 vendor
 
 # creds
-secrets.dev.yml
+secrets.demo.yml
 secrets.staging.yml
 secrets.qa.yml
 secrets.prod.yml

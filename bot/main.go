@@ -28,6 +28,7 @@ import (
 type Response events.APIGatewayProxyResponse
 type Event struct {
 	Name                   string
+	DisplayName            string
 	InvitedCol             string
 	RsvpdCol               string
 	DialogflowAction       string
@@ -38,7 +39,6 @@ const (
 	INVITED_FAMILY       = "INVITED_FAMILY"
 	UPDATE_EVENT         = "UPDATE_EVENT"
 	TOTAL_INVITED_FAMILY = 9999
-	SPREADSHEET_ID       = "1FJPePAwh8Xy9revrg8-ANn7GK2Xwd0Xe_6DdLqDujbc"
 	MAX_INVITEES         = 9999
 	NULL_INVITEES        = -1
 )
@@ -69,9 +69,9 @@ func (invitedFamily *InvitedFamily) totalEventsInvitedTo() int {
 	return totalEvents
 }
 
-var Vidhi = Event{Name: "VIDHI", InvitedCol: "E", RsvpdCol: "F", DialogflowAction: "actions_rsvp_vidhi", DialogflowRsvpVariable: "vidhi_rsvpd"}
-var Garba = Event{Name: "GARBA-RECEPTION", InvitedCol: "G", RsvpdCol: "H", DialogflowAction: "actions_rsvp_garba", DialogflowRsvpVariable: "garba_rsvpd"}
-var Wedding = Event{Name: "WEDDING", InvitedCol: "I", RsvpdCol: "J", DialogflowAction: "actions_rsvp_wedding", DialogflowRsvpVariable: "wedding_rsvpd"}
+var Vidhi = Event{Name: "VIDHI", DisplayName: "VIDHI", InvitedCol: "E", RsvpdCol: "F", DialogflowAction: "actions_rsvp_vidhi", DialogflowRsvpVariable: "vidhi_rsvpd"}
+var Garba = Event{Name: "GARBA", DisplayName: "GARBA-RECEPTION", InvitedCol: "G", RsvpdCol: "H", DialogflowAction: "actions_rsvp_garba", DialogflowRsvpVariable: "garba_rsvpd"}
+var Wedding = Event{Name: "WEDDING", DisplayName: "WEDDING", InvitedCol: "I", RsvpdCol: "J", DialogflowAction: "actions_rsvp_wedding", DialogflowRsvpVariable: "wedding_rsvpd"}
 
 var AllEvents = []Event{Vidhi, Garba, Wedding}
 
@@ -79,6 +79,7 @@ var sessionID string
 var responseID string
 var intent string
 var requestStr string
+var spreadsheetID string
 
 func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	wr, err := parseRequestBody(request)
@@ -274,24 +275,22 @@ func InviteCodeFulfillment(inviteCode int) (string, string) {
 	// }
 	invitedFamily := findInvitedFamily(inviteCode)
 	log.Printf("\nReturned Invited_family row %+v", invitedFamily)
-	var intent string
+
 	message := fmt.Sprintf("You must be %s.\nYou're invited to: ", invitedFamily.InviteName)
 	if invitedFamily.VidhiInvited > 0 {
 		message += eventInviteMsg(Vidhi, invitedFamily.VidhiInvited)
-		intent = Vidhi.DialogflowAction
 	}
 	if invitedFamily.GarbaInvited > 0 {
 		message += eventInviteMsg(Garba, invitedFamily.GarbaInvited)
-		intent = Garba.DialogflowAction
 	}
 	if invitedFamily.WeddingInvited > 0 {
 		message += eventInviteMsg(Wedding, invitedFamily.WeddingInvited)
-		intent = Wedding.DialogflowAction
 	}
 
 	message += fmt.Sprintf("\nWould you like to RSVP now?")
+	_, followupAction := getFollowupEventAction(invitedFamily, Event{}, make(map[Event]int))
 
-	return message, intent
+	return message, followupAction
 }
 
 func getFollowupEventAction(invitedFamily InvitedFamily, currentEvent Event, alreadyRsvpdEvents map[Event]int) (string, string) {
@@ -308,7 +307,7 @@ func getFollowupEventAction(invitedFamily InvitedFamily, currentEvent Event, alr
 	default:
 		message = "We've got you down for: \n"
 		for event, rsvpd := range alreadyRsvpdEvents {
-			message += fmt.Sprintf("%s: %d \n", event.Name, rsvpd)
+			message += fmt.Sprintf("%s: %d \n", event.DisplayName, rsvpd)
 		}
 		message += "See you there! :) \nP.S. Come chat again if you need to update your RSVP." // Tried & failed -- emoji.Sprint(":tada:") \U0001f389
 	}
@@ -322,7 +321,7 @@ func isNextEvent(event Event, currentEvent Event, alreadyRsvpdEvents map[Event]i
 }
 
 func eventInviteMsg(event Event, invited int) string {
-	message := fmt.Sprintf("\n%s: ", event.Name)
+	message := fmt.Sprintf("\n%s: ", event.DisplayName)
 	switch invited {
 	case NULL_INVITEES:
 		message = ""
@@ -469,20 +468,20 @@ func setGoogleSheetsData(data []*sheets.ValueRange) (*sheets.BatchUpdateValuesRe
 		ValueInputOption: "USER_ENTERED",
 		Data:             data,
 	}
-	resp, err := getGoogleSheetsClient().Spreadsheets.Values.BatchUpdate(SPREADSHEET_ID, rb).Do()
+	resp, err := getGoogleSheetsClient().Spreadsheets.Values.BatchUpdate(spreadsheetID, rb).Do()
 	return resp, err
 }
 func appendGoogleSheetsData(sheetName string, rowData [][]interface{}) (*sheets.AppendValuesResponse, error) {
 	writeRange := sheetName + "!A2:E2"
 	rb := sheets.ValueRange{Values: rowData}
-	resp, err := getGoogleSheetsClient().Spreadsheets.Values.Append(SPREADSHEET_ID, writeRange, &rb).ValueInputOption("USER_ENTERED").InsertDataOption("INSERT_ROWS").Do()
+	resp, err := getGoogleSheetsClient().Spreadsheets.Values.Append(spreadsheetID, writeRange, &rb).ValueInputOption("USER_ENTERED").InsertDataOption("INSERT_ROWS").Do()
 	return resp, err
 }
 
 func getGoogleSheetsData(sheetName string, colRange string) ([][]interface{}, error) {
 	// Retrieve Data
 	readRange := sheetName + "!" + colRange
-	resp, err := getGoogleSheetsClient().Spreadsheets.Values.Get(SPREADSHEET_ID, readRange).Do()
+	resp, err := getGoogleSheetsClient().Spreadsheets.Values.Get(spreadsheetID, readRange).Do()
 	return resp.Values, err
 }
 
@@ -506,6 +505,7 @@ func getGoogleSheetsClient() *sheets.Service {
 }
 
 func main() {
+	spreadsheetID = os.Getenv("SPREADSHEET_ID")
 	fmt.Println("Start app")
 	fmt.Println("Start lambda handler")
 	lambda.Start(Handler)
